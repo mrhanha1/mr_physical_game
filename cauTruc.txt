@@ -1,0 +1,74 @@
+project-root/
+│
+├── index.html
+├── vite.config.js
+├── package.json
+│
+└── src/
+    ├── main.js
+    │
+    ├── core/
+    │   ├── XRSession.js
+    │   ├── Renderer.js
+    │   ├── PhysicsWorld.js
+    │   ├── DepthSensor.js
+    │   ├── LightEstimator.js
+    │   └── PerformanceManager.js
+    │
+    ├── world/
+    │   ├── PlaneDetector.js
+    │   ├── MeshDetector.js
+    │   ├── AnchorManager.js
+    │   └── SceneManager.js
+    │
+    ├── player/
+    │   ├── PlayerRig.js
+    │   ├── ControllerInput.js
+    │   ├── HandTracking.js
+    │   ├── GestureDetector.js
+    │   ├── Locomotion.js
+    │   └── HapticManager.js
+    │
+    ├── combat/
+    │   ├── GunSystem.js
+    │   ├── BulletManager.js
+    │   ├── MeleeSystem.js
+    │   └── HitDetection.js
+    │
+    ├── enemy/
+    │   ├── EnemyAI.js
+    │   ├── StateMachine.js
+    │   ├── EnemySpawner.js
+    │   ├── Ragdoll.js
+    │   └── EnemyPool.js
+    │
+    ├── audio/
+    │   ├── AudioManager.js
+    │   └── SoundBank.js
+    │
+    ├── ui/
+    │   ├── VRUI.js
+    │   ├── WristHUD.js
+    │   └── RayPointer.js
+    │
+    ├── game/
+    │   ├── WaveManager.js
+    │   └── ScoreSystem.js
+    │
+    ├── weapons/
+    │   ├── Pistol.js
+    │
+    ├── shaders/
+    │   ├── occlusion.vert
+    │   ├── occlusion.frag
+    │   └── hologram.frag
+    │
+    ├── assets/
+    │   ├── models/
+    │   ├── textures/
+    │   └── sounds/
+    │
+    └── utils/
+        ├── MathUtils.js
+        ├── ObjectPool.js
+        └── Logger.js
