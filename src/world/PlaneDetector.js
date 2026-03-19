@@ -80,4 +80,18 @@ export class PlaneDetector {
   isReady() {
     return this.floors.length > 0
   }
+  getRandomPointOnFloor(frame, referenceSpace) {
+  const floor = this.floors[0]
+  if (!floor) return null
+  const pose = frame.getPose(floor.planeSpace, referenceSpace)
+  const polygon = floor.polygon
+  // random point trong polygon bounds
+  const idx = Math.floor(Math.random() * polygon.length)
+  const p = polygon[idx]
+  return new THREE.Vector3(
+    pose.transform.position.x + p.x,
+    pose.transform.position.y,
+    pose.transform.position.z + p.z
+  )
+}
 }

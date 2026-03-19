@@ -18,7 +18,7 @@ export class XRSession {
 
   async startSession() {
     const session = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['local-floor'],
+      requiredFeatures: ['local-floor', 'bounded-floor'],
       optionalFeatures: [
         'plane-detection',
         'mesh-detection',

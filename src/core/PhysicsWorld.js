@@ -66,4 +66,10 @@ export class PhysicsWorld {
     this.world.removeRigidBody(body)
     this.bodies.delete(body)
   }
+  
+  castRay(origin, direction, maxToi = 10) {
+  const ray = new RAPIER.Ray(origin, direction)
+  const hit = this.world.castRay(ray, maxToi, true)
+  return hit  // null = không chạm gì
+}
 }

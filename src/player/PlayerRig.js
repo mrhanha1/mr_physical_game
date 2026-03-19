@@ -24,6 +24,11 @@ export class PlayerRig {
   getControllerGrip(index) {
     return this.renderer.xr.getControllerGrip(index)
   }
+  getPosition() {
+    // Lấy từ camera của XR session
+    const cam = this.renderer.xr.getCamera()
+    return cam.position  // world position của head
+  }
 
   update() {
     // Pose tự động update qua WebXR, không cần làm thêm
