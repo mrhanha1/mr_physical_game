@@ -141,9 +141,9 @@ renderer.renderer.setAnimationLoop((time, frame) => {
 
   renderer.render(scene, camera)
 })
-setTimeout(() => {
-  floorBox.position.set(0, 0.1, -0.5)
-  floorBox.visible = true
-  floorFound = true
-  console.log('[Phase1 MOCK] Box placed')
-}, 2000)
+// setTimeout(() => {
+//   floorBox.position.set(0, 0.1, -0.5)
+//   floorBox.visible = true
+//   floorFound = true
+//   console.log('[Phase1 MOCK] Box placed')
+// }, 2000)
