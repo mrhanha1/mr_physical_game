@@ -11,7 +11,13 @@ import { Locomotion } from './player/Locomotion.js'
 import { HapticManager } from './player/HapticManager.js'
 import { HandTracking } from './player/HandTracking.js'
 import { GestureDetector } from './player/GestureDetector.js'
-
+import { GunSystem } from './combat/GunSystem.js'
+import { BulletManager } from './combat/BulletManager.js'
+import { HitDetection } from './combat/HitDetection.js'
+import { MeleeSystem } from './combat/MeleeSystem.js'
+import { EnemyAI } from './enemy/EnemyAI.js'
+import { VRUI } from './ui/VRUI.js'
+import { Pistol } from './weapons/Pistol.js'
 // ─── Core ─────────────────────────────────────────────────────────
 const renderer = new Renderer()
 const xrSession = new XRSession(renderer)
@@ -41,7 +47,22 @@ const gestureDetector = new GestureDetector(handTracking)
 // ─── Physics ──────────────────────────────────────────────────────
 const physics = new PhysicsWorld()
 await physics.init()
+// ─── Combat ───────────────────────────────────────────────────────
+const enemies = []
+const bulletManager = new BulletManager(scene)
+const gunSystem = new GunSystem(scene, physics, controllerInput, renderer.renderer)
+const hitDetection = new HitDetection(enemies)
+const meleeSystem = new MeleeSystem(renderer.renderer, scene)
+const vrui = new VRUI(scene)
 
+// Spawn pistol trên bàn (test: spawn trước mặt)
+const pistol = new Pistol()
+gunSystem.addGun(pistol, new THREE.Vector3(0, 1.0, -0.5))
+
+// Spawn 1 enemy test
+const enemy = new EnemyAI(new THREE.Vector3(0, 0, -1.5))
+scene.add(enemy.mesh)
+enemies.push(enemy)
 // ─── XR Session ───────────────────────────────────────────────────
 await xrSession.init()
 
@@ -140,6 +161,21 @@ renderer.renderer.setAnimationLoop((time, frame) => {
   physics.step(dt)
 
   renderer.render(scene, camera)
+  // ── Phase 5, 6, 7 ──
+  gunSystem.update(frame, bulletManager)
+  bulletManager.update(dt)
+
+  const hits = hitDetection.checkBullets(bulletManager.getBullets())
+  for (const { bullet, enemy, zone } of hits) {
+    enemy.takeDamage(25, zone)
+    // Xóa đạn khi trúng
+    bulletManager.bullets.splice(bulletManager.bullets.indexOf(bullet), 1)
+    scene.remove(bullet.mesh)
+  }
+
+  meleeSystem.update(dt, enemies, haptic)
+
+  enemies.forEach(e => e.update(dt))
 })
 // setTimeout(() => {
 //   floorBox.position.set(0, 0.1, -0.5)
