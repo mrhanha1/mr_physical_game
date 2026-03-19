@@ -135,11 +135,6 @@ renderer.renderer.setAnimationLoop((time, frame) => {
 
     if (evt.action === 'shoot') {
       haptic.vibrate(evt.hand, 80, 0.6)
-
-      // Phase 4: spawn bóng vật lý khi bắn
-      const spawnPos = camera.position.clone().add(new THREE.Vector3(0, -0.2, -0.3))
-      const { mesh } = physics.spawnBall(spawnPos)
-      scene.add(mesh)
     }
   }
 
@@ -160,7 +155,6 @@ renderer.renderer.setAnimationLoop((time, frame) => {
 
   physics.step(dt)
 
-  renderer.render(scene, camera)
   // ── Phase 5, 6, 7 ──
   gunSystem.update(frame, bulletManager)
   bulletManager.update(dt)
@@ -168,14 +162,14 @@ renderer.renderer.setAnimationLoop((time, frame) => {
   const hits = hitDetection.checkBullets(bulletManager.getBullets())
   for (const { bullet, enemy, zone } of hits) {
     enemy.takeDamage(25, zone)
-    // Xóa đạn khi trúng
     bulletManager.bullets.splice(bulletManager.bullets.indexOf(bullet), 1)
     scene.remove(bullet.mesh)
   }
 
   meleeSystem.update(dt, enemies, haptic)
-
   enemies.forEach(e => e.update(dt))
+
+  renderer.render(scene, camera)
 })
 // setTimeout(() => {
 //   floorBox.position.set(0, 0.1, -0.5)
