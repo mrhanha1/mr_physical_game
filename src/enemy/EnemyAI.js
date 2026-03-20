@@ -37,7 +37,10 @@ export class EnemyAI {
     this.mesh = new THREE.Group()
 
     // Dùng OcclusionMaterial để tay thật có thể che enemy ảo (phase 11)
-    this._sphereMat = createOcclusionMaterial(0xcc3333)
+    //this._sphereMat = createOcclusionMaterial(0xcc3333)
+
+    this._sphereMat = new THREE.MeshStandardMaterial({ color: 0xcc3333 })
+
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.25, 16, 16),
       this._sphereMat

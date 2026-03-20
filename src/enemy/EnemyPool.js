@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { EnemyAI } from './EnemyAI.js'
 
 export class EnemyPool {
-  constructor(scene, poolSize = 20) {
+  constructor(scene, poolSize = 5) {
     this.scene = scene
     this.pool = []       // idle
     this.active = new Set()

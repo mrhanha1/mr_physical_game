@@ -78,7 +78,7 @@ const pistol = new Pistol()
 gunSystem.addGun(pistol, new THREE.Vector3(0, 1.0, -0.5))
 
 // ─── Enemy ────────────────────────────────────────────────────────
-const enemySpawner = new EnemySpawner(scene, 20)
+const enemySpawner = new EnemySpawner(scene, 3)
 const hitDetection = new HitDetection([])
 
 // ─── Game Logic ───────────────────────────────────────────────────
