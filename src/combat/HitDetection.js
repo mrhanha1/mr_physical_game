@@ -6,6 +6,9 @@ export class HitDetection {
   constructor(enemies) {
     this.enemies = enemies  // array EnemyAI
   }
+  setEnemies(enemies) {
+    this.enemies = enemies
+  }
 
   checkBullets(bullets) {
     const hits = []
