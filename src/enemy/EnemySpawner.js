@@ -52,9 +52,9 @@ export class EnemySpawner {
       const enemy = this.pool.acquire(pos)
 
       // Wire death callback → tạo Ragdoll + phát âm thanh
-      enemy.onDeath = (position, material) => {
+      enemy.onDeath = (position) => {
         const floorY = this._floorPoints[0]?.y ?? 0
-        this._spawnRagdoll(position, material, floorY)
+        this._spawnRagdoll(position, floorY)
         if (this.audioManager) {
           this.audioManager.playAt('enemyDeath', position, playerPos, new THREE.Vector3(0, 0, -1))
         }
@@ -135,10 +135,9 @@ export class EnemySpawner {
       .map(p => p.clone())
   }
 
-  // material: THREE.Material của enemy (clone màu cho xác)
-  // floorY: y của sàn gần nhất
-  _spawnRagdoll(position, material, floorY) {
-    const ragdoll = new Ragdoll(position, this.scene, material, floorY)
+  _spawnRagdoll(position, floorY) {
+    const mat = new THREE.MeshStandardMaterial({ color: 0x882222 })
+    const ragdoll = new Ragdoll(position, this.scene, mat, floorY)
     this._ragdolls.push(ragdoll)
   }
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { StateMachine, EnemyState } from './StateMachine.js'
+import { createOcclusionMaterial } from '../core/OcclusionMaterial.js'
 
 const _v3 = new THREE.Vector3()
 const _dir = new THREE.Vector3()
@@ -35,7 +36,8 @@ export class EnemyAI {
     // ── Mesh — sphere đơn giản ──
     this.mesh = new THREE.Group()
 
-    this._sphereMat = new THREE.MeshStandardMaterial({ color: 0xcc3333 })
+    // Dùng OcclusionMaterial để tay thật có thể che enemy ảo (phase 11)
+    this._sphereMat = createOcclusionMaterial(0xcc3333)
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.25, 16, 16),
       this._sphereMat
@@ -44,7 +46,6 @@ export class EnemyAI {
     sphere.userData.hitZone = 'body'
     this.mesh.add(sphere)
 
-    // Alias cho hit detection (head = cùng sphere, headshot nếu ray hit phần trên)
     this._bodyMat = this._sphereMat
     this._headMat = this._sphereMat
 
@@ -246,32 +247,28 @@ export class EnemyAI {
     return hit === null
   }
 
-  _onStateChange(prev, next) {
-    if (next === EnemyState.AGGRO) {
-      this._bodyMat.color.set(0xff2200)
-    } else if (next === EnemyState.PATROL) {
-      this._bodyMat.color.set(0xcc3333)
-    } else if (next === EnemyState.STAGGER) {
-      this._bodyMat.color.set(0xffaa00)
-    }
-  }
-
   _die() {
     this.isDead = true
     this.velocity.set(0, 0, 0)
     this.mesh.visible = false
     console.log('[Enemy] Dead')
-    // Truyền material để Ragdoll clone màu, position để biết nơi rớt
-    if (this.onDeath) this.onDeath(this.mesh.position.clone(), this._sphereMat)
+    if (this.onDeath) this.onDeath(this.mesh.position.clone())
+  }
+
+  _onStateChange(prev, next) {
+    const c = this._sphereMat.uniforms?.diffuse?.value
+    if (!c) return
+    if (next === EnemyState.AGGRO)   c.set(0xff2200)
+    if (next === EnemyState.PATROL)  c.set(0xcc3333)
+    if (next === EnemyState.STAGGER) c.set(0xffaa00)
   }
 
   _flashRed() {
-    this._bodyMat.emissive?.set(0xff0000)
-    this._headMat.emissive?.set(0xff0000)
-    setTimeout(() => {
-      this._bodyMat.emissive?.set(0x000000)
-      this._headMat.emissive?.set(0x000000)
-    }, 150)
+    const c = this._sphereMat.uniforms?.diffuse?.value
+    if (!c) return
+    const orig = c.clone()
+    c.set(0xff0000)
+    setTimeout(() => c.copy(orig), 150)
   }
 
   _createHpBar() {

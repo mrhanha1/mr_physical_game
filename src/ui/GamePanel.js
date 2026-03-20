@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import { GameState } from '../game/WaveManager.js'
+import hologramVert from '../shaders/hologram.vert?raw'
+import hologramFrag from '../shaders/hologram.frag?raw'
 
 // Panel 3D nổi trước mặt người chơi
 // Hiển thị: menu start, wave info, score, break countdown, game over
@@ -89,14 +91,20 @@ export class GamePanel {
     this._texture = new THREE.CanvasTexture(this._canvas)
 
     const geo = new THREE.PlaneGeometry(0.6, 0.375)
-    const mat = new THREE.MeshBasicMaterial({
-      map: this._texture,
+    this._hologramMat = new THREE.ShaderMaterial({
+      vertexShader: hologramVert,
+      fragmentShader: hologramFrag,
+      uniforms: {
+        uMap:     { value: this._texture },
+        uTime:    { value: 0 },
+        uOpacity: { value: 0.95 },
+      },
       transparent: true,
       side: THREE.DoubleSide,
       depthWrite: false,
     })
 
-    this.mesh = new THREE.Mesh(geo, mat)
+    this.mesh = new THREE.Mesh(geo, this._hologramMat)
     this.mesh.visible = false
     this.scene.add(this.mesh)
 
@@ -124,6 +132,11 @@ export class GamePanel {
 
   _positionInFront() {
     // Sẽ được main.js cập nhật vị trí trước mặt player mỗi frame khi visible
+  }
+
+  // Gọi mỗi frame để animate hologram
+  updateTime(t) {
+    if (this._hologramMat) this._hologramMat.uniforms.uTime.value = t
   }
 
   _draw(fn) {
