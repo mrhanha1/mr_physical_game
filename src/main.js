@@ -102,10 +102,14 @@ rayPointer.onSelect = (mesh) => {
   if (action === 'start' || action === 'restart') {
     playerHP = MAX_HP
     wristHUD.setHP(playerHP, MAX_HP)
+    // Init spawner ngay nếu chưa có — plane có thể chưa ready nhưng sẽ spawn khi ready
+    if (!spawnerInited && planeDetector.isReady()) {
+      enemySpawner.init(planeDetector, physics, audio)
+      spawnerInited = true
+    }
     waveManager.startGame()
     comfortMenu.close()
   } else {
-    // Comfort menu actions
     comfortMenu.handleAction(action)
   }
 }
@@ -144,8 +148,8 @@ let reverbSet      = false
 let lastTime       = 0
 let elapsedTime    = 0
 
-gamePanel.showMenu(scoreSystem.highScore)
-rayPointer.setVisible(true)
+gamePanel.showMenu(scoreSystem.highScore)  // vẫn show để hiện trên browser
+rayPointer.setVisible(false)  // ẩn tia cho đến khi vào AR
 
 renderer.renderer.xr.addEventListener('sessionstart', async () => {
   const session = renderer.renderer.xr.getSession()
@@ -159,8 +163,11 @@ renderer.renderer.xr.addEventListener('sessionstart', async () => {
   depthSensor.checkSupport(session)
   lightEstimator.init(session)
 
-  // Đặt súng trước mặt player sau khi vào AR
-  // Chờ 1 frame để referenceSpace sẵn sàng
+  // Hiện panel và tia sau khi vào AR — controller đã có pose
+  gamePanel.showMenu(scoreSystem.highScore)
+  rayPointer.setVisible(true)
+
+  // Đặt súng trước mặt player
   setTimeout(() => {
     const cam = renderer.renderer.xr.getCamera()
     const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion)
@@ -231,6 +238,12 @@ renderer.renderer.setAnimationLoop((time, frame) => {
       audio.estimateRoomSizeAndSetReverb(planeDetector, frame, referenceSpace)
       reverbSet = true
     }
+  }
+
+  // Nếu game đang PLAYING nhưng spawner chưa init xong → init ngay khi sẵn sàng
+  if (!spawnerInited && planeDetector.isReady() && waveManager.state === GameState.PLAYING) {
+    enemySpawner.init(planeDetector, physics, audio)
+    spawnerInited = true
   }
 
   // ── Phase 5/6/7 — Combat ──
