@@ -18,15 +18,20 @@ export class XRSession {
 
   async startSession() {
     const session = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['local-floor', 'bounded-floor'],
+      requiredFeatures: ['local-floor'],
       optionalFeatures: [
+        'bounded-floor',
         'plane-detection',
         'mesh-detection',
         'hand-tracking',
         'anchors',
         'depth-sensing',
-        'light-estimation'
-      ]
+        'light-estimation',
+      ],
+      depthSensing: {
+        usagePreference: ['cpu-optimized'],
+        dataFormatPreference: ['luminance-alpha'],
+      }
     })
 
     this.session = session
