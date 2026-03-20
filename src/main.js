@@ -75,10 +75,11 @@ const meleeSystem   = new MeleeSystem(renderer.renderer, scene)
 const vrui          = new VRUI(scene)
 
 const pistol = new Pistol()
+// Súng sẽ được đặt vị trí thực sau khi vào AR (trong sessionstart)
 gunSystem.addGun(pistol, new THREE.Vector3(0, 1.0, -0.5))
 
 // ─── Enemy ────────────────────────────────────────────────────────
-const enemySpawner = new EnemySpawner(scene, 3)
+const enemySpawner = new EnemySpawner(scene, 20)
 const hitDetection = new HitDetection([])
 
 // ─── Game Logic ───────────────────────────────────────────────────
@@ -161,6 +162,17 @@ renderer.renderer.xr.addEventListener('sessionstart', async () => {
 
   depthSensor.checkSupport(session)
   lightEstimator.init(session)
+
+  // Đặt súng trước mặt player sau khi vào AR
+  // Chờ 1 frame để referenceSpace sẵn sàng
+  setTimeout(() => {
+    const cam = renderer.renderer.xr.getCamera()
+    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion)
+    const pos = cam.position.clone().addScaledVector(fwd, 0.6)
+    pos.y -= 0.3
+    pistol.mesh.position.copy(pos)
+    console.log('[Gun] Pistol placed at', pos)
+  }, 500)
 })
 
 function _visualizeBoundary(boundsGeometry) {

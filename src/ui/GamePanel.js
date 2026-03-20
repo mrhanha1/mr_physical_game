@@ -1,7 +1,5 @@
 import * as THREE from 'three'
 import { GameState } from '../game/WaveManager.js'
-import hologramVert from '../shaders/hologram.vert?raw'
-import hologramFrag from '../shaders/hologram.frag?raw'
 
 // Panel 3D nổi trước mặt người chơi
 // Hiển thị: menu start, wave info, score, break countdown, game over
@@ -91,14 +89,8 @@ export class GamePanel {
     this._texture = new THREE.CanvasTexture(this._canvas)
 
     const geo = new THREE.PlaneGeometry(0.6, 0.375)
-    this._hologramMat = new THREE.ShaderMaterial({
-      vertexShader: hologramVert,
-      fragmentShader: hologramFrag,
-      uniforms: {
-        uMap:     { value: this._texture },
-        uTime:    { value: 0 },
-        uOpacity: { value: 0.95 },
-      },
+    this._hologramMat = new THREE.MeshBasicMaterial({
+      map: this._texture,
       transparent: true,
       side: THREE.DoubleSide,
       depthWrite: false,

@@ -54,34 +54,32 @@ export class WaveManager {
     this._startNextWave()
   }
 
-  // Gọi mỗi frame
-  // frame, referenceSpace, playerPos: để truyền cho EnemySpawner.spawn
   update(dt, frame, referenceSpace, playerPos, playerHP) {
     if (this.state === GameState.WAITING || this.state === GameState.SCANNING) return
-
     if (this.state === GameState.GAME_OVER) return
+
+    if (this.state === GameState.PLAYING) {
+      // Spawn ngay lần đầu tiên
+      this._doSpawnIfNeeded(frame, referenceSpace, playerPos)
+
+      this.scoreSystem.update(dt)
+
+      if (playerHP <= 0) {
+        this._endGame()
+        return
+      }
+
+      if (this.enemySpawner.getActiveCount() === 0) {
+        this._endWave(frame, referenceSpace, playerPos)
+      }
+      return
+    }
 
     if (this.state === GameState.WAVE_BREAK) {
       this._breakTimer -= dt
       if (this._breakTimer <= 0) {
         this._setState(GameState.PLAYING)
         this._startNextWave()
-      }
-      return
-    }
-
-    if (this.state === GameState.PLAYING) {
-      this.scoreSystem.update(dt)
-
-      // Player chết
-      if (playerHP <= 0) {
-        this._endGame()
-        return
-      }
-
-      // Hết enemy → kết thúc wave
-      if (this.enemySpawner.getActiveCount() === 0) {
-        this._endWave(frame, referenceSpace, playerPos)
       }
     }
   }
@@ -151,13 +149,4 @@ export class WaveManager {
       breakTimer: this._breakTimer,
     })
   }
-}
-
-// Patch update để gọi _doSpawnIfNeeded
-const _origUpdate = WaveManager.prototype.update
-WaveManager.prototype.update = function(dt, frame, referenceSpace, playerPos, playerHP) {
-  if (this.state === GameState.PLAYING) {
-    this._doSpawnIfNeeded(frame, referenceSpace, playerPos)
-  }
-  _origUpdate.call(this, dt, frame, referenceSpace, playerPos, playerHP)
 }
