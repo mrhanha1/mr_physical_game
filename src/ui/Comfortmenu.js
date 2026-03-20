@@ -181,3 +181,4 @@ export class ComfortMenu {
     ctx.fillText(label, cx, cy)
   }
 }
+//sua lai ten file

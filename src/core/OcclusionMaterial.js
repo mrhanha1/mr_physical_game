@@ -24,6 +24,7 @@ export function createOcclusionMaterial(baseColor = 0xcc3333) {
   })
 }
 
+
 // Cập nhật uniforms từ DepthSensor mỗi frame
 // material: ShaderMaterial từ createOcclusionMaterial
 // depthSensor: DepthSensor instance
