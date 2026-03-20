@@ -39,9 +39,16 @@ export class ControllerInput {
       // Thumbstick
       this._thumbstickX[idx] = gp.axes[2] ?? 0
 
-      // Button A (right) / X (left)
+      // Button A (right) / X (left) → reload
       if (gp.buttons[4]?.pressed)
         this.events.push({ action: 'reload', hand: h })
+
+      // Button B (right) / Y (left) → start_game (edge trigger, không lặp)
+      const btn5 = gp.buttons[5]?.pressed ?? false
+      if (!this._btn5Prev) this._btn5Prev = [false, false]
+      if (btn5 && !this._btn5Prev[idx])
+        this.events.push({ action: 'start_game', hand: h })
+      this._btn5Prev[idx] = btn5
     }
   }
 

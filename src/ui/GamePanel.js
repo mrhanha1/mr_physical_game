@@ -19,12 +19,12 @@ export class GamePanel {
     this._draw(ctx => {
       this._bg(ctx)
       this._title(ctx, 'MR COMBAT', '#00ffcc')
-      this._center(ctx, 'Point ray at START button', '#aaaaaa', 28, 155)
+      this._center(ctx, 'Press B button to START', '#aaaaaa', 28, 155)
       this._center(ctx, `High Score: ${highScore}`, '#ffdd88', 26, 195)
-      this._button(ctx, 'START', 256, 260, '#00cc66')
+      this._button(ctx, 'B = START', 256, 260, '#00cc66')
     })
     this.mesh.visible = true
-    this.startButton.visible   = true
+    this.startButton.visible   = false  // không cần nữa
     this.restartButton.visible = false
   }
 
@@ -47,11 +47,11 @@ export class GamePanel {
       this._center(ctx, `Score: ${score}`, '#ffffff', 36, 165)
       const isNew = score >= highScore
       this._center(ctx, isNew ? 'NEW HIGH SCORE!' : `Best: ${highScore}`, '#ffdd88', 26, 210)
-      this._button(ctx, 'RESTART', 256, 270, '#cc4400')
+      this._button(ctx, 'B = RESTART', 256, 270, '#cc4400')
     })
     this.mesh.visible = true
     this.startButton.visible   = false
-    this.restartButton.visible = true
+    this.restartButton.visible = false  // không cần hitbox nữa
   }
 
   updateBreakTimer(secondsLeft, waveNumber, score) {

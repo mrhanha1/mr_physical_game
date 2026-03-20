@@ -202,8 +202,22 @@ renderer.renderer.setAnimationLoop((time, frame) => {
 
   for (const evt of controllerInput.getEvents()) {
     if (evt.action === 'shoot') haptic.vibrate(evt.hand, 80, 0.6)
-    // Phase 12: mở comfort menu bằng button B/Y (action 'menu')
     if (evt.action === 'menu') comfortMenu.toggle(playerPos, camFwd)
+
+    // Button B/Y → Start hoặc Restart
+    if (evt.action === 'start_game') {
+      const state = waveManager.state
+      if (state === GameState.WAITING || state === GameState.GAME_OVER) {
+        playerHP = MAX_HP
+        wristHUD.setHP(playerHP, MAX_HP)
+        if (!spawnerInited && planeDetector.isReady()) {
+          enemySpawner.init(planeDetector, physics, audio)
+          spawnerInited = true
+        }
+        waveManager.startGame()
+        haptic.vibrate('right', 150, 0.8)
+      }
+    }
   }
 
   // ── Phase 3 ──
