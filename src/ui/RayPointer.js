@@ -34,7 +34,7 @@ export class RayPointer {
 
   // Gọi mỗi frame
   update() {
-    const ctrl = this.renderer.xr.getController(1)  // right = index 1
+    const ctrl = this.renderer.xr.getControllerGrip(1)  // right = index 1
     if (!ctrl) return
 
     // Ray từ controller phải

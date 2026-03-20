@@ -5,41 +5,61 @@ export class XRSession {
   }
 
   async init() {
+    console.log('[XR] Checking support...')
     const supported = await navigator.xr?.isSessionSupported('immersive-ar')
+    console.log('[XR] immersive-ar supported:', supported)
+
     if (!supported) {
       alert('WebXR immersive-ar không được hỗ trợ trên thiết bị này')
       return
     }
 
-    document.getElementById('enter-ar').addEventListener('click', () => {
+    const btn = document.getElementById('enter-ar')
+    if (!btn) {
+      console.error('[XR] Button #enter-ar not found!')
+      return
+    }
+
+    console.log('[XR] Button found, waiting for click...')
+    btn.addEventListener('click', () => {
+      console.log('[XR] Button clicked!')
       this.startSession()
     })
   }
 
   async startSession() {
-    const session = await navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['local-floor'],
-      optionalFeatures: [
-        'bounded-floor',
-        'plane-detection',
-        'mesh-detection',
-        'hand-tracking',
-        'anchors',
-        'depth-sensing',
-        'light-estimation',
-      ],
-      depthSensing: {
-        usagePreference: ['cpu-optimized'],
-        dataFormatPreference: ['luminance-alpha'],
-      }
-    })
+    console.log('[XR] Requesting session...')
+    try {
+      const session = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['local-floor'],
+        optionalFeatures: [
+          'plane-detection',
+          'mesh-detection',
+          'hand-tracking',
+          'anchors',
+          'depth-sensing',
+          'light-estimation',
+        ],
+        depthSensing: {
+          usagePreference: ['cpu-optimized'],
+          dataFormatPreference: ['luminance-alpha'],
+        }
+      })
 
-    this.session = session
-    this.renderer.xr.setSession(session)
-    document.getElementById('enter-ar').style.display = 'none'
+      console.log('[XR] Session granted:', session)
+      await this.renderer.renderer.xr.setSession(session)
+      console.log('[XR] Session set on renderer')
 
-    session.addEventListener('end', () => {
-      document.getElementById('enter-ar').style.display = 'block'
-    })
+      document.getElementById('enter-ar').style.display = 'none'
+
+      session.addEventListener('end', () => {
+        console.log('[XR] Session ended')
+        document.getElementById('enter-ar').style.display = 'block'
+      })
+
+    } catch (e) {
+      console.error('[XR] startSession failed:', e.name, e.message)
+      alert('XR Error: ' + e.name + ' - ' + e.message)
+    }
   }
 }

@@ -138,12 +138,11 @@ await xrSession.init()
 
 // ─── State Flags ──────────────────────────────────────────────────
 let referenceSpace = null
-let boundaryMesh   = null
 let roomFed        = false
 let spawnerInited  = false
 let reverbSet      = false
 let lastTime       = 0
-let elapsedTime    = 0  // hologram shader time
+let elapsedTime    = 0
 
 gamePanel.showMenu(scoreSystem.highScore)
 rayPointer.setVisible(true)
@@ -151,13 +150,10 @@ rayPointer.setVisible(true)
 renderer.renderer.xr.addEventListener('sessionstart', async () => {
   const session = renderer.renderer.xr.getSession()
   try {
-    referenceSpace = await session.requestReferenceSpace('bounded-floor')
-    if (referenceSpace.boundsGeometry) {
-      locomotion.setBounds(referenceSpace.boundsGeometry)
-      _visualizeBoundary(referenceSpace.boundsGeometry)
-    }
-  } catch {
     referenceSpace = await session.requestReferenceSpace('local-floor')
+    console.log('[XR] local-floor reference space ready')
+  } catch (e) {
+    console.error('[XR] local-floor failed:', e)
   }
 
   depthSensor.checkSupport(session)
@@ -174,17 +170,6 @@ renderer.renderer.xr.addEventListener('sessionstart', async () => {
     console.log('[Gun] Pistol placed at', pos)
   }, 500)
 })
-
-function _visualizeBoundary(boundsGeometry) {
-  if (boundaryMesh) scene.remove(boundaryMesh)
-  const shape = new THREE.Shape()
-  boundsGeometry.forEach((p, i) => i === 0 ? shape.moveTo(p.x, p.z) : shape.lineTo(p.x, p.z))
-  const mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
-  boundaryMesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat)
-  boundaryMesh.rotation.x = -Math.PI / 2
-  boundaryMesh.position.y = 0.01
-  scene.add(boundaryMesh)
-}
 
 // ─── XR Frame Loop ────────────────────────────────────────────────
 renderer.renderer.setAnimationLoop((time, frame) => {

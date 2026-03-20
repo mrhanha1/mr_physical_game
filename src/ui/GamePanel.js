@@ -1,8 +1,4 @@
 import * as THREE from 'three'
-import { GameState } from '../game/WaveManager.js'
-
-// Panel 3D nổi trước mặt người chơi
-// Hiển thị: menu start, wave info, score, break countdown, game over
 
 export class GamePanel {
   constructor(scene) {
@@ -12,25 +8,23 @@ export class GamePanel {
     this._ctx = null
     this._texture = null
 
-    // Button hitbox cho RayPointer
-    this.startButton = null
+    // Hitbox buttons cho RayPointer — vô hình, chỉ dùng để detect ray
+    this.startButton   = null
     this.restartButton = null
 
     this._build()
   }
 
-  // ── Show modes ──
-
   showMenu(highScore) {
     this._draw(ctx => {
       this._bg(ctx)
       this._title(ctx, 'MR COMBAT', '#00ffcc')
-      this._center(ctx, 'Point your ray at START', '#aaaaaa', 36, 160)
-      this._center(ctx, `High Score: ${highScore}`, '#ffdd88', 28, 220)
+      this._center(ctx, 'Point ray at START button', '#aaaaaa', 28, 155)
+      this._center(ctx, `High Score: ${highScore}`, '#ffdd88', 26, 195)
+      this._button(ctx, 'START', 256, 260, '#00cc66')
     })
-    this._positionInFront()
     this.mesh.visible = true
-    this.startButton.visible = true
+    this.startButton.visible   = true
     this.restartButton.visible = false
   }
 
@@ -38,12 +32,11 @@ export class GamePanel {
     this._draw(ctx => {
       this._bg(ctx)
       this._title(ctx, `WAVE ${waveNumber} CLEARED!`, '#00ff88')
-      this._center(ctx, `Score: ${score}`, '#ffffff', 32, 170)
-      this._center(ctx, `Next wave in ${Math.ceil(secondsLeft)}s`, '#ffaa00', 28, 220)
+      this._center(ctx, `Score: ${score}`, '#ffffff', 32, 175)
+      this._center(ctx, `Next wave in ${Math.ceil(secondsLeft)}s`, '#ffaa00', 28, 225)
     })
-    this._positionInFront()
     this.mesh.visible = true
-    this.startButton.visible = false
+    this.startButton.visible   = false
     this.restartButton.visible = false
   }
 
@@ -51,20 +44,14 @@ export class GamePanel {
     this._draw(ctx => {
       this._bg(ctx)
       this._title(ctx, 'GAME OVER', '#ff4444')
-      this._center(ctx, `Score: ${score}`, '#ffffff', 36, 170)
+      this._center(ctx, `Score: ${score}`, '#ffffff', 36, 165)
       const isNew = score >= highScore
-      this._center(ctx, isNew ? `NEW HIGH SCORE!` : `High Score: ${highScore}`, '#ffdd88', 26, 215)
+      this._center(ctx, isNew ? 'NEW HIGH SCORE!' : `Best: ${highScore}`, '#ffdd88', 26, 210)
+      this._button(ctx, 'RESTART', 256, 270, '#cc4400')
     })
-    this._positionInFront()
     this.mesh.visible = true
-    this.startButton.visible = false
+    this.startButton.visible   = false
     this.restartButton.visible = true
-  }
-
-  showScorePopup(delta, label, worldPos) {
-    // Floating text — separate small plane
-    // Simplified: chỉ log, WristHUD đã có score display
-    console.log(`[Score popup] +${delta} ${label}`)
   }
 
   updateBreakTimer(secondsLeft, waveNumber, score) {
@@ -72,62 +59,52 @@ export class GamePanel {
   }
 
   hide() {
-    this.mesh.visible = false
-    this.startButton.visible = false
+    this.mesh.visible          = false
+    this.startButton.visible   = false
     this.restartButton.visible = false
   }
+
+  updateTime(t) { /* no-op */ }
 
   // ── Private ──
 
   _build() {
     const W = 512, H = 320
     this._canvas = document.createElement('canvas')
-    this._canvas.width = W
+    this._canvas.width  = W
     this._canvas.height = H
     this._ctx = this._canvas.getContext('2d')
 
     this._texture = new THREE.CanvasTexture(this._canvas)
 
-    const geo = new THREE.PlaneGeometry(0.6, 0.375)
-    this._hologramMat = new THREE.MeshBasicMaterial({
+    const mat = new THREE.MeshBasicMaterial({
       map: this._texture,
       transparent: true,
       side: THREE.DoubleSide,
       depthWrite: false,
     })
 
-    this.mesh = new THREE.Mesh(geo, this._hologramMat)
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.375), mat)
     this.mesh.visible = false
     this.scene.add(this.mesh)
 
-    // Button hitbox meshes (invisible, cho RayPointer)
-    this.startButton = this._makeButton('start', new THREE.Vector3(0, -0.08, 0.001))
-    this.restartButton = this._makeButton('restart', new THREE.Vector3(0, -0.08, 0.001))
+    // Hitbox vô hình — chỉ để RayPointer intersect
+    this.startButton   = this._makeHitbox('start',   new THREE.Vector3(0, -0.10, 0.002))
+    this.restartButton = this._makeHitbox('restart', new THREE.Vector3(0, -0.10, 0.002))
     this.mesh.add(this.startButton)
     this.mesh.add(this.restartButton)
-    this.startButton.visible = false
+    this.startButton.visible   = false
     this.restartButton.visible = false
   }
 
-  _makeButton(action, offset) {
-    const geo = new THREE.PlaneGeometry(0.24, 0.07)
-    const mat = new THREE.MeshBasicMaterial({
-      color: action === 'start' ? 0x00cc66 : 0xcc4400,
-      transparent: true, opacity: 0.85,
-      side: THREE.DoubleSide,
-    })
-    const btn = new THREE.Mesh(geo, mat)
-    btn.position.copy(offset)
-    btn.userData.action = action
-    return btn
-  }
-
-  _positionInFront() {
-    // Sẽ được main.js cập nhật vị trí trước mặt player mỗi frame khi visible
-  }
-
-  updateTime(t) {
-    // no-op: hologram shader đã được thay bằng MeshBasicMaterial
+  _makeHitbox(action, offset) {
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.22, 0.065),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+    )
+    mesh.position.copy(offset)
+    mesh.userData.action = action
+    return mesh
   }
 
   _draw(fn) {
@@ -143,16 +120,30 @@ export class GamePanel {
   }
 
   _title(ctx, text, color) {
-    ctx.fillStyle = color
-    ctx.font = 'bold 48px monospace'
-    ctx.textAlign = 'center'
-    ctx.fillText(text, 256, 80)
+    ctx.fillStyle  = color
+    ctx.font       = 'bold 46px monospace'
+    ctx.textAlign  = 'center'
+    ctx.fillText(text, 256, 75)
   }
 
   _center(ctx, text, color, size, y) {
     ctx.fillStyle = color
-    ctx.font = `${size}px monospace`
+    ctx.font      = `${size}px monospace`
     ctx.textAlign = 'center'
     ctx.fillText(text, 256, y)
+  }
+
+  // Vẽ nút trực tiếp lên canvas — khớp vị trí hitbox
+  _button(ctx, label, cx, cy, color) {
+    const W = 220, H = 54
+    const x = cx - W / 2
+    const y = cy - H / 2
+    ctx.fillStyle = color
+    ctx.roundRect(x, y, W, H, 10)
+    ctx.fill()
+    ctx.fillStyle = '#ffffff'
+    ctx.font      = 'bold 26px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(label, cx, cy + 9)
   }
 }
