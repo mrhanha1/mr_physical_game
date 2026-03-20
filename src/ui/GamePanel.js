@@ -126,9 +126,8 @@ export class GamePanel {
     // Sẽ được main.js cập nhật vị trí trước mặt player mỗi frame khi visible
   }
 
-  // Gọi mỗi frame để animate hologram
   updateTime(t) {
-    if (this._hologramMat) this._hologramMat.uniforms.uTime.value = t
+    // no-op: hologram shader đã được thay bằng MeshBasicMaterial
   }
 
   _draw(fn) {
