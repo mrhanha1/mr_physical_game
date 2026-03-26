@@ -1,98 +1,101 @@
 import * as THREE from 'three'
+
+// ── Core ──────────────────────────────────────────────────────────────────
 import { Renderer }        from './core/Renderer.js'
 import { XRSession }       from './core/XRSession.js'
 import { PhysicsWorld }    from './core/PhysicsWorld.js'
-import { PlaneDetector }   from './world/PlaneDetector.js'
-import { MeshDetector }    from './world/MeshDetector.js'
-import { SceneManager }    from './world/SceneManager.js'
-import { PlayerRig }       from './player/PlayerRig.js'
-import { ControllerInput } from './player/ControllerInput.js'
-import { Locomotion }      from './player/Locomotion.js'
-import { HapticManager }   from './player/HapticManager.js'
-import { HandTracking }    from './player/HandTracking.js'
-import { GestureDetector } from './player/GestureDetector.js'
-import { GlowHands }       from './player/GlowHands.js'
-import { GunSystem }       from './combat/GunSystem.js'
-import { BulletManager }   from './combat/BulletManager.js'
-import { HitDetection }    from './combat/HitDetection.js'
-import { MeleeSystem }     from './combat/MeleeSystem.js'
-import { VRUI }            from './ui/VRUI.js'
-import { WristHUD }        from './ui/WristHUD.js'
-import { RayPointer }      from './ui/RayPointer.js'
-import { GamePanel }       from './ui/GamePanel.js'
-import { ComfortMenu }     from './ui/ComfortMenu.js'
-import { Pistol }          from './weapons/Pistol.js'
-import { EnemySpawner }    from './enemy/EnemySpawner.js'
-import { AudioManager }    from './audio/AudioManager.js'
-import { ScoreSystem }     from './game/ScoreSystem.js'
-import { WaveManager, GameState } from './game/WaveManager.js'
 import { DepthSensor }     from './core/DepthSensor.js'
 import { LightEstimator }  from './core/LightEstimator.js'
 import { updateOcclusionUniforms } from './core/OcclusionMaterial.js'
 
-// ─── Core ─────────────────────────────────────────────────────────
+// ── World ─────────────────────────────────────────────────────────────────
+import { PlaneDetector }   from './world/PlaneDetector.js'
+import { MeshDetector }    from './world/MeshDetector.js'
+import { SceneManager }    from './world/SceneManager.js'
+
+// ── Player ────────────────────────────────────────────────────────────────
+import { PlayerRig }       from './player/PlayerRig.js'
+import { ControllerInput } from './player/ControllerInput.js'
+import { HapticManager }   from './player/HapticManager.js'
+import { HandTracking }    from './player/HandTracking.js'
+import { Locomotion }      from './player/Locomotion.js'
+
+// ── Sphere ────────────────────────────────────────────────────────────────
+import { SphereManager }   from './sphere/SphereManager.js'
+import { SphereGrabSystem } from './sphere/SphereGrabSystem.js'
+
+// ── Weapons ───────────────────────────────────────────────────────────────
+import { Pistol }          from './weapons/Pistol.js'
+import { Rifle }           from './weapons/Rifle.js'
+
+// ── Audio ─────────────────────────────────────────────────────────────────
+import { AudioManager }    from './audio/AudioManager.js'
+
+// ── UI ────────────────────────────────────────────────────────────────────
+import { WristHUD }        from './ui/WristHUD.js'
+import { RayPointer }      from './ui/RayPointer.js'
+import { GamePanel }       from './ui/GamePanel.js'
+import { ComfortMenu }     from './ui/ComfortMenu.js'
+
+// ═════════════════════════════════════════════════════════════════════════
+// KHỞI TẠO
+// ═════════════════════════════════════════════════════════════════════════
+
+// ── Core ──
 const renderer  = new Renderer()
 const xrSession = new XRSession(renderer)
 const scene     = new THREE.Scene()
 const camera    = new THREE.PerspectiveCamera()
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 1)
+// Ánh sáng cơ bản (LightEstimator sẽ override khi vào AR)
+const dirLight     = new THREE.DirectionalLight(0xffffff, 1.2)
 dirLight.position.set(1, 2, 1)
 scene.add(dirLight)
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
 scene.add(ambientLight)
 
-// ─── Phase 11 ─────────────────────────────────────────────────────
+// ── Depth + Light ──
 const depthSensor    = new DepthSensor()
 const lightEstimator = new LightEstimator(dirLight, ambientLight)
 
-// ─── World ────────────────────────────────────────────────────────
+// ── World ──
 const sceneManager  = new SceneManager(scene)
 const planeDetector = new PlaneDetector()
 const meshDetector  = new MeshDetector()
 
-// ─── Player ───────────────────────────────────────────────────────
+// ── Player ──
 const playerRig       = new PlayerRig(renderer.renderer, scene)
 const controllerInput = new ControllerInput(renderer.renderer)
 const locomotion      = new Locomotion(camera)
 const haptic          = new HapticManager(renderer.renderer)
 const handTracking    = new HandTracking(renderer.renderer, scene)
-const gestureDetector = new GestureDetector(handTracking)
-const glowHands       = new GlowHands(renderer.renderer, scene)   // phase 12
 
-// ─── Physics ──────────────────────────────────────────────────────
+// ── Physics ──
 const physics = new PhysicsWorld()
 await physics.init()
 
-// ─── Audio ────────────────────────────────────────────────────────
+// ── Audio ──
 const audio = new AudioManager()
 await audio.loadAll()
 
-// ─── Combat ───────────────────────────────────────────────────────
-const bulletManager = new BulletManager(scene)
-const gunSystem     = new GunSystem(scene, physics, controllerInput, renderer.renderer)
-const meleeSystem   = new MeleeSystem(renderer.renderer, scene)
-const vrui          = new VRUI(scene)
+// ── Sphere system ──
+const sphereManager  = new SphereManager(scene, physics)
+const grabSystem     = new SphereGrabSystem(
+  renderer.renderer, sphereManager, controllerInput, haptic, audio
+)
 
-const pistol = new Pistol()
-// Súng sẽ được đặt vị trí thực sau khi vào AR (trong sessionstart)
-gunSystem.addGun(pistol, new THREE.Vector3(0, 1.0, -0.5))
+// ── Weapons ──
+const weaponOpts = { renderer: renderer.renderer, scene, sphereManager, haptic, audio }
+const pistol     = new Pistol(weaponOpts)
+const rifle      = new Rifle(weaponOpts)
 
-// ─── Enemy ────────────────────────────────────────────────────────
-const enemySpawner = new EnemySpawner(scene, 20)
-const hitDetection = new HitDetection([])
-
-// ─── Game Logic ───────────────────────────────────────────────────
-const scoreSystem = new ScoreSystem()
-const waveManager = new WaveManager(enemySpawner, scoreSystem)
-
-// ─── UI ───────────────────────────────────────────────────────────
+// ── UI ──
 const wristHUD    = new WristHUD(scene, renderer.renderer)
 const gamePanel   = new GamePanel(scene)
-const comfortMenu = new ComfortMenu(scene, renderer.renderer, locomotion)  // phase 12
+const comfortMenu = new ComfortMenu(scene, renderer.renderer, locomotion)
 const rayPointer  = new RayPointer(renderer.renderer, scene, controllerInput)
 
-// Đăng ký tất cả button targets
+// Đăng ký button targets cho ray pointer
 rayPointer.addTarget(gamePanel.startButton)
 rayPointer.addTarget(gamePanel.restartButton)
 for (const btn of comfortMenu.getButtons()) rayPointer.addTarget(btn)
@@ -100,59 +103,81 @@ for (const btn of comfortMenu.getButtons()) rayPointer.addTarget(btn)
 rayPointer.onSelect = (mesh) => {
   const action = mesh.userData.action
   if (action === 'start' || action === 'restart') {
-    playerHP = MAX_HP
-    wristHUD.setHP(playerHP, MAX_HP)
-    // Init spawner ngay nếu chưa có — plane có thể chưa ready nhưng sẽ spawn khi ready
-    if (!spawnerInited && planeDetector.isReady()) {
-      enemySpawner.init(planeDetector, physics, audio)
-      spawnerInited = true
-    }
-    waveManager.startGame()
+    // Spawn một batch sphere ban đầu
+    _spawnInitialSpheres()
+    gamePanel.hide()
+    rayPointer.setVisible(false)
     comfortMenu.close()
   } else {
     comfortMenu.handleAction(action)
   }
 }
 
-// ─── Player State ─────────────────────────────────────────────────
-let playerHP   = 100
-const MAX_HP   = 100
+// ── Khởi động XR ──
+await xrSession.init()
 
-// ─── WaveManager Callbacks ────────────────────────────────────────
-waveManager.onStateChange = (state) => {
-  if (state === GameState.PLAYING) {
-    gamePanel.hide()
-    rayPointer.setVisible(false)
-  } else if (state === GameState.GAME_OVER) {
-    rayPointer.setVisible(true)
-    gamePanel.showGameOver(scoreSystem.score, scoreSystem.highScore)
+// ═════════════════════════════════════════════════════════════════════════
+// STATE
+// ═════════════════════════════════════════════════════════════════════════
+
+let referenceSpace  = null
+let roomFed         = false
+let reverbSet       = false
+let lastTime        = 0
+let elapsedTime     = 0
+let gameStarted     = false
+
+// Spawn mỗi N giây nếu scene ít sphere
+const SPAWN_INTERVAL  = 4.0   // giây
+const SPAWN_MIN_COUNT = 5     // spawn khi dưới ngưỡng này
+let   spawnTimer      = 0
+
+// Vị trí spawn trước mặt player (fallback khi không có plane)
+function _spawnInFrontOfPlayer(count = 1) {
+  const cam    = renderer.renderer.xr.getCamera()
+  const fwd    = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion)
+  fwd.y = 0; fwd.normalize()
+  const base   = cam.position.clone().addScaledVector(fwd, 0.6)
+  base.y = cam.position.y - 0.3   // hơi thấp hơn tầm mắt
+
+  for (let i = 0; i < count; i++) {
+    const offset = new THREE.Vector3(
+      (Math.random() - 0.5) * 0.4,
+      Math.random() * 0.3,
+      (Math.random() - 0.5) * 0.4,
+    )
+    sphereManager.spawnSphere(base.clone().add(offset), 'RANDOM')
   }
 }
 
-waveManager.onWaveStart = (waveNum) => {
-  wristHUD.setWave(waveNum)
+function _spawnInitialSpheres() {
+  if (planeDetector.isReady()) {
+    // Spawn trên sàn/bàn
+    for (let i = 0; i < 6; i++) {
+      const pos = planeDetector.getRandomPointOnFloor(
+        renderer.renderer.xr.getFrame?.() ?? null, referenceSpace
+      )
+      if (pos) {
+        pos.y += 0.15  // hơi lơ lửng để rơi xuống
+        sphereManager.spawnSphere(pos, 'RANDOM')
+      } else {
+        _spawnInFrontOfPlayer(1)
+      }
+    }
+  } else {
+    _spawnInFrontOfPlayer(6)
+  }
+  gameStarted = true
 }
 
-waveManager.onWaveEnd = (waveNum, breakSec) => {
-  gamePanel.showWaveBreak(waveNum, breakSec, scoreSystem.score)
-}
+// ── Show UI trước khi vào AR ──
+gamePanel.showMenu(0)
+rayPointer.setVisible(false)
 
-// ─── XR Session ───────────────────────────────────────────────────
-await xrSession.init()
-
-// ─── State Flags ──────────────────────────────────────────────────
-let referenceSpace = null
-let roomFed        = false
-let spawnerInited  = false
-let reverbSet      = false
-let lastTime       = 0
-let elapsedTime    = 0
-
-gamePanel.showMenu(scoreSystem.highScore)  // vẫn show để hiện trên browser
-rayPointer.setVisible(false)  // ẩn tia cho đến khi vào AR
-
+// ─── XR Session Start ─────────────────────────────────────────────────────
 renderer.renderer.xr.addEventListener('sessionstart', async () => {
   const session = renderer.renderer.xr.getSession()
+
   try {
     referenceSpace = await session.requestReferenceSpace('local-floor')
     console.log('[XR] local-floor reference space ready')
@@ -163,25 +188,18 @@ renderer.renderer.xr.addEventListener('sessionstart', async () => {
   depthSensor.checkSupport(session)
   lightEstimator.init(session)
 
-  // Hiện panel và tia sau khi vào AR — controller đã có pose
-  gamePanel.showMenu(scoreSystem.highScore)
+  // Hiển thị panel + ray pointer
+  gamePanel.showMenu(0)
   rayPointer.setVisible(true)
-
-  // Đặt súng trước mặt player
-  setTimeout(() => {
-    const cam = renderer.renderer.xr.getCamera()
-    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion)
-    const pos = cam.position.clone().addScaledVector(fwd, 0.6)
-    pos.y -= 0.3
-    pistol.mesh.position.copy(pos)
-    console.log('[Gun] Pistol placed at', pos)
-  }, 500)
 })
 
-// ─── XR Frame Loop ────────────────────────────────────────────────
+// ═════════════════════════════════════════════════════════════════════════
+// ANIMATION LOOP
+// ═════════════════════════════════════════════════════════════════════════
+
 renderer.renderer.setAnimationLoop((time, frame) => {
-  const dt = Math.min((time - lastTime) / 1000, 0.1)
-  lastTime = time
+  const dt    = Math.min((time - lastTime) / 1000, 0.1)
+  lastTime    = time
   elapsedTime += dt
 
   if (!frame || !referenceSpace) {
@@ -192,149 +210,98 @@ renderer.renderer.setAnimationLoop((time, frame) => {
   const playerPos = playerRig.getPosition()
   const camFwd    = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
 
-  // ── Phase 1 ──
+  // ── Room detection ──
   planeDetector.update(frame, referenceSpace, scene)
   meshDetector.update(frame, referenceSpace, scene)
 
-  // ── Phase 2 ──
-  controllerInput.update(frame)
-  locomotion.update(dt, controllerInput.getThumbstickX('right'))
-
-  for (const evt of controllerInput.getEvents()) {
-    if (evt.action === 'shoot') haptic.vibrate(evt.hand, 80, 0.6)
-    if (evt.action === 'menu') comfortMenu.toggle(playerPos, camFwd)
-
-    // Button B/Y → Start hoặc Restart
-    if (evt.action === 'start_game') {
-      const state = waveManager.state
-      if (state === GameState.WAITING || state === GameState.GAME_OVER) {
-        playerHP = MAX_HP
-        wristHUD.setHP(playerHP, MAX_HP)
-        if (!spawnerInited && planeDetector.isReady()) {
-          enemySpawner.init(planeDetector, physics, audio)
-          spawnerInited = true
-        }
-        waveManager.startGame()
-        haptic.vibrate('right', 150, 0.8)
-      }
-    }
-  }
-
-  // ── Phase 3 ──
-  handTracking.update(dt)
-  gestureDetector.update(dt)
-
-  // Phase 12: glow khi detect gesture
-  for (const evt of gestureDetector.getEvents()) {
-    glowHands.flash(evt.hand, evt.gesture)
-  }
-  glowHands.update(dt)
-
-  // ── Phase 4 ──
+  // Feed room mesh vào physics (chỉ 1 lần)
   if (!roomFed && meshDetector.getRoomGeometries().length > 0) {
     meshDetector.getRoomGeometries().forEach(geo => physics.addStaticMesh(geo))
     roomFed = true
+    console.log('[Physics] Room mesh fed')
   }
-  physics.step(dt)
 
-  // ── Phase 11 — Depth + Light ──
+  // Đặt reverb theo kích thước phòng (1 lần)
+  if (!reverbSet && planeDetector.isReady()) {
+    audio.estimateRoomSizeAndSetReverb(planeDetector, frame, referenceSpace)
+    reverbSet = true
+  }
+
+  // ── Input ──
+  controllerInput.update(frame)
+  locomotion.update(dt, controllerInput.getThumbstickX('right'))
+
+  // ── Depth + Light ──
   const viewerPose = frame.getViewerPose(referenceSpace)
   if (viewerPose) {
     depthSensor.update(frame, viewerPose.views[0], referenceSpace)
     lightEstimator.update(frame)
   }
 
-  // ── Spawner init (phase 8/9) ──
-  if (!spawnerInited && roomFed && planeDetector.isReady()) {
-    enemySpawner.init(planeDetector, physics, audio)
-    spawnerInited = true
-    if (!reverbSet) {
-      audio.estimateRoomSizeAndSetReverb(planeDetector, frame, referenceSpace)
-      reverbSet = true
+  // ── Hand tracking ──
+  handTracking.update(dt)
+
+  // ── Physics ──
+  physics.step(dt)
+
+  // ── Sphere system ──
+  sphereManager.update()
+  grabSystem.update(dt, frame)
+
+  // ── Weapons ──
+  pistol.update(frame, dt, grabSystem)
+  rifle.update(frame, dt, grabSystem)
+
+  // ── Auto-spawn spheres khi game đã bắt đầu ──
+  if (gameStarted) {
+    spawnTimer += dt
+    if (spawnTimer >= SPAWN_INTERVAL && sphereManager.count < SPAWN_MIN_COUNT) {
+      spawnTimer = 0
+      _spawnInFrontOfPlayer(2)
     }
   }
 
-  // Nếu game đang PLAYING nhưng spawner chưa init xong → init ngay khi sẵn sàng
-  if (!spawnerInited && planeDetector.isReady() && waveManager.state === GameState.PLAYING) {
-    enemySpawner.init(planeDetector, physics, audio)
-    spawnerInited = true
+  // ── WristHUD update ──
+  const leftHeld  = grabSystem.getHeldByHand('left')
+  const rightHeld = grabSystem.getHeldByHand('right')
+
+  wristHUD.setLeftHeld(leftHeld)
+
+  // Xác định súng nào đang được cầm + update gun state
+  // Pistol = right hand, Rifle = cả 2 tay
+  const activePistol = pistol._isHeld ? pistol : null
+  const activeRifle  = rifle._isHeld  ? rifle  : null
+  const activeWeapon = activeRifle ?? activePistol
+
+  if (activeWeapon) {
+    const name = activeWeapon === activeRifle ? 'Rifle' : 'Pistol'
+    wristHUD.setGunState(name, activeWeapon._chambered)
+  } else {
+    wristHUD.setGunState(null, null)
   }
 
-  // ── Phase 5/6/7 — Combat ──
-  gunSystem.update(frame, bulletManager)
-  bulletManager.update(dt)
-
-  const activeEnemies = enemySpawner.getActiveEnemies()
-  hitDetection.setEnemies(activeEnemies)
-
-  const hits = hitDetection.checkBullets(bulletManager.getBullets())
-  for (const { bullet, enemy, zone } of hits) {
-    enemy.takeDamage(25, zone)
-    if (enemy.isDead) waveManager.registerKill(zone)
-    audio.playAt('gunshot', bullet.mesh.position, playerPos, camFwd)
-    audio.playAt('bodyHit', enemy.mesh.position,  playerPos, camFwd)
-    bulletManager.bullets.splice(bulletManager.bullets.indexOf(bullet), 1)
-    scene.remove(bullet.mesh)
-  }
-
-  const meleeHits = meleeSystem.update(dt, activeEnemies, haptic)
-  if (Array.isArray(meleeHits)) {
-    for (const { enemy, zone } of meleeHits) {
-      if (enemy.isDead) waveManager.registerKill(zone)
-      audio.playAt('punchImpact', enemy.mesh.position, playerPos, camFwd)
-    }
-  }
-
-  // Touch damage từ enemy
-  for (const enemy of activeEnemies) {
-    if (enemy.pendingTouchDamage) {
-      playerHP = Math.max(0, playerHP - enemy.pendingTouchDamage)
-      enemy.pendingTouchDamage = 0
-      haptic.vibrate('left', 200, 1.0)
-      haptic.vibrate('right', 200, 1.0)
-      wristHUD.setHP(playerHP, MAX_HP)
-    }
-  }
-
-  // ── Phase 10 — Wave + HUD ──
-  if (spawnerInited) {
-    enemySpawner.update(dt, playerPos, frame, referenceSpace)
-    waveManager.update(dt, frame, referenceSpace, playerPos, playerHP)
-
-    if (waveManager.state === GameState.WAVE_BREAK) {
-      gamePanel.updateBreakTimer(waveManager._breakTimer, waveManager.waveNumber, scoreSystem.score)
-    }
-
-    // Phase 11 — occlusion uniforms
-    if (depthSensor.ready) {
-      for (const enemy of activeEnemies) {
-        updateOcclusionUniforms(enemy._sphereMat, depthSensor)
-      }
-    }
-  }
-
-  // Ammo HUD
-  const heldGun = gunSystem.getHeldGun?.()
-  if (heldGun) wristHUD.setAmmo(heldGun.ammo, heldGun.maxAmmo)
-
+  wristHUD.setTotalSpheres(sphereManager.count)
   wristHUD.update()
 
-  // Phase 12 — hologram time update
-  gamePanel.updateTime(elapsedTime)
-
-  // GamePanel nổi trước mặt player
+  // ── UI panels ──
   if (gamePanel.mesh.visible) {
+    // Panel nổi trước mặt player
     gamePanel.mesh.position.copy(playerPos).addScaledVector(camFwd, 1.2)
     gamePanel.mesh.position.y = playerPos.y + 0.1
     gamePanel.mesh.lookAt(playerPos)
     rayPointer.update()
   }
 
-  // ComfortMenu ray pointer khi đang mở
   if (comfortMenu.isOpen) {
     rayPointer.setVisible(true)
     rayPointer.update()
   }
+
+  // ── Occlusion uniforms cho depth sensor ──
+  // (Cập nhật cho sphere meshes nếu cần)
+
+  // Hologram time
+  gamePanel.updateTime(elapsedTime)
 
   renderer.render(scene, camera)
 })
