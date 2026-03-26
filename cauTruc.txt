@@ -6,71 +6,151 @@ project-root/
 │
 └── src/
     ├── main.js
+    │     Điểm khởi động toàn bộ game. Khởi tạo và kết nối tất cả
+    │     các hệ thống, chạy animation loop XR, xử lý auto-spawn
+    │     sphere và cập nhật HUD mỗi frame.
     │
     ├── core/
-    │   ├── XRSession.js
     │   ├── Renderer.js
+    │   │     Tạo THREE.WebGLRenderer với alpha=true (passthrough MR),
+    │   │     bật XR mode.
+    │   │
+    │   ├── XRSession.js
+    │   │     Kiểm tra hỗ trợ WebXR, yêu cầu session immersive-ar với
+    │   │     các feature: plane-detection, mesh-detection, hand-tracking,
+    │   │     depth-sensing, light-estimation.
+    │   │
     │   ├── PhysicsWorld.js
+    │   │     Wrapper Rapier3D: khởi tạo world với gravity -9.81,
+    │   │     thêm static collider từ room mesh, bước simulation mỗi
+    │   │     frame, sync vị trí THREE mesh theo Rapier body.
+    │   │
     │   ├── DepthSensor.js
+    │   │     Đọc depth buffer từ XR frame, tạo DataTexture để shader
+    │   │     occlusion biết vật thể thực nào đang che vật 3D.
+    │   │
     │   ├── LightEstimator.js
-    │   └── PerformanceManager.js
+    │   │     Lấy thông tin ánh sáng môi trường thực (XRLightProbe),
+    │   │     cập nhật DirectionalLight và AmbientLight của scene.
+    │   │
+    │   └── OcclusionMaterial.js
+    │         Cập nhật uniforms (depth texture, UV transform) cho
+    │         shader occlusion mỗi frame.
     │
     ├── world/
     │   ├── PlaneDetector.js
+    │   │     Phân loại các mặt phẳng XR thành sàn/tường/bàn, tạo
+    │   │     mesh hiển thị bán trong suốt, cung cấp điểm spawn
+    │   │     ngẫu nhiên trên sàn.
+    │   │
     │   ├── MeshDetector.js
+    │   │     Xây dựng THREE.BufferGeometry từ XR room mesh,
+    │   │     feed geometry vào PhysicsWorld làm static collider.
+    │   │
     │   └── SceneManager.js
+    │         Tiện ích quản lý scene (thêm/xóa object tập trung).
     │
     ├── player/
     │   ├── PlayerRig.js
+    │   │     Lấy vị trí world của camera XR (vị trí đầu người chơi).
+    │   │
     │   ├── ControllerInput.js
+    │   │     Đọc gamepad của 2 controller: trigger, grip (value liên
+    │   │     tục), thumbstick, button A/B. Phát event queue mỗi frame.
+    │   │
     │   ├── HandTracking.js
-    │   ├── GestureDetector.js
-    │   ├── Locomotion.js
-    │   └── HapticManager.js
+    │   │     Theo dõi 25 joint của bàn tay qua WebXR Hand API,
+    │   │     cập nhật mesh khớp tay mỗi frame.
+    │   │
+    │   ├── HapticManager.js
+    │   │     Gửi haptic pulse tới controller (tay, thời gian, cường độ).
+    │   │
+    │   └── Locomotion.js
+    │         Dịch chuyển player theo thumbstick phải (smooth locomotion).
     │
-    ├── combat/
-    │   ├── GunSystem.js
-    │   ├── BulletManager.js
-    │   ├── MeleeSystem.js
-    │   └── HitDetection.js
+    ├── sphere/                          ── MỚI ──
+    │   ├── SphereMaterials.js
+    │   │     Định nghĩa 6 loại sphere (RED, BLUE, GOLD, GREEN, PURPLE,
+    │   │     GLASS), mỗi loại có color, metalness, roughness, radius,
+    │   │     restitution, friction, mass riêng. Xuất hàm tạo material
+    │   │     và random type.
+    │   │
+    │   ├── SphereManager.js
+    │   │     Spawn sphere (Rapier dynamic body + THREE mesh), pool tối
+    │   │     đa 30 sphere, auto-despawn khi rơi quá sâu (y < -5m),
+    │   │     tìm sphere FREE gần nhất cho grab/load.
+    │   │
+    │   └── SphereGrabSystem.js
+    │         Nhặt sphere (grip > 0.7, radius 0.18m), giữ sphere theo
+    │         tay bằng gravity-scale trick, tính throw velocity từ
+    │         lịch sử vị trí 5 frame, ném với scale ×1.8. Hỗ trợ
+    │         tách sphere để nạp vào súng.
     │
-    ├── enemy/
-    │   ├── EnemyAI.js
-    │   ├── StateMachine.js
-    │   ├── EnemySpawner.js
-    │   ├── Ragdoll.js
-    │   └── EnemyPool.js
+    ├── weapons/                         ── VIẾT LẠI ──
+    │   ├── WeaponBase.js
+    │   │     Base class: nạp sphere vào buồng đạn, bắn với muzzle
+    │   │     velocity thực + Rapier xử lý gravity, vẽ sight line laser,
+    │   │     edge-trigger bắn, cooldown.
+    │   │
+    │   ├── Pistol.js
+    │   │     Súng ngắn 1 tay phải. Aim = hướng -Z của right grip.
+    │   │     Muzzle 12 m/s, cooldown 500ms. Mesh đơn giản (body +
+    │   │     barrel + grip). Nạp đạn từ tay trái đang cầm sphere.
+    │   │
+    │   └── Rifle.js
+    │         Súng trường 2 tay. Aim = weighted blend 60% right direction
+    │         + 40% vector right→left grip, smoothed 60%/frame. Muzzle
+    │         22 m/s, cooldown 800ms. Chỉ bắn khi 2 tay cách nhau < 0.65m.
+    │         Mesh dài hơn với foregrip và scope.
     │
     ├── audio/
     │   ├── AudioManager.js
+    │   │     Preload Howl sound, phát spatial 3D (HRTF), phát non-spatial,
+    │   │     random pitch, tính reverb từ diện tích sàn phòng (convolver).
+    │   │
     │   └── SoundBank.js
+    │         Danh sách sound assets: spherePickup, sphereDrop, sphereThrow,
+    │         sphereBounce, sphereLoad, pistolShot, rifleShot, weaponGrab,
+    │         uiClick.
     │
     ├── ui/
-    │   ├── VRUI.js
     │   ├── WristHUD.js
+    │   │     HUD trên cổ tay trái (canvas → CanvasTexture). Hiển thị:
+    │   │     sphere đang cầm tay trái | trạng thái súng (EMPTY/LOADED +
+    │   │     loại sphere) | tổng sphere trong scene. Ẩn/hiện theo
+    │   │     hướng nhìn vào cổ tay.
+    │   │
     │   ├── GamePanel.js
-    │   └── RayPointer.js
-    │
-    ├── game/
-    │   ├── WaveManager.js
-    │   └── ScoreSystem.js
-    │
-    ├── weapons/
-    │   ├── Pistol.js
-    │   ├── Shotgun.js
-    │   └── SMG.js
+    │   │     Panel 3D nổi trong không gian, hiển thị menu Start/Restart,
+    │   │     dùng canvas hologram shader, nổi trước mặt player.
+    │   │
+    │   ├── RayPointer.js
+    │   │     Tia laser từ right controller để tương tác với UI panel.
+    │   │     Đổi màu khi hover target, phát event select khi trigger.
+    │   │
+    │   ├── ComfortMenu.js
+    │   │     Menu cài đặt comfort (snap turn, vignette...), mở/đóng
+    │   │     theo button B/Y, nổi trước mặt player.
+    │   │
+    │   └── VRUI.js
+    │         Lớp tiện ích UI chung (hiện chưa dùng nhiều).
     │
     ├── shaders/
-    │   ├── occlusion.vert
-    │   ├── occlusion.frag
-    │   └── hologram.frag
-    │
-    ├── assets/
-    │   ├── models/
-    │   ├── textures/
-    │   └── sounds/
+    │   ├── occlusion.vert / occlusion.frag
+    │   │     Shader occlusion: đọc depth texture từ DepthSensor, cắt
+    │   │     pixel khi vật thực ở gần hơn vật 3D → sphere bị che bởi
+    │   │     tường/bàn thật.
+    │   │
+    │   └── hologram.frag / hologram.vert
+    │         Shader hologram cho GamePanel (scanline, glow, flicker).
     │
     └── utils/
         ├── MathUtils.js
+        │     Hàm toán học tiện ích (lerp, clamp, random range...).
+        │
         ├── ObjectPool.js
+        │     Generic object pool để tái sử dụng object, giảm GC spike
+        │     trong render loop.
+        │
         └── Logger.js
+              Wrapper console.log với prefix và level filter.
