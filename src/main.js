@@ -40,7 +40,14 @@ import { ComfortMenu }     from './ui/ComfortMenu.js'
 // ═════════════════════════════════════════════════════════════════════════
 // KHỞI TẠO
 // ═════════════════════════════════════════════════════════════════════════
-
+const _logDiv = document.createElement('div')
+_logDiv.style.cssText = 'position:fixed;top:0;left:0;background:rgba(0,0,0,0.8);color:#0f0;font:14px monospace;padding:8px;z-index:9999;max-width:100vw;max-height:40vh;overflow:auto;pointer-events:none'
+document.body.appendChild(_logDiv)
+window.onerror = (msg, src, line) => {
+  _logDiv.innerHTML += `<div style="color:#f44">ERR L${line}: ${msg}</div>`
+}
+console.error = (...a) => { _logDiv.innerHTML += `<div style="color:#f44">ERR: ${a.join(' ')}</div>` }
+console.warn  = (...a) => { _logDiv.innerHTML += `<div style="color:#fa0">WARN: ${a.join(' ')}</div>` }
 // ── Core ──
 const renderer  = new Renderer()
 const xrSession = new XRSession(renderer)
