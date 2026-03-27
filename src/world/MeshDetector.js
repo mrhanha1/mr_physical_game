@@ -41,6 +41,11 @@ export class MeshDetector {
   }
 
   getRoomGeometries() {
-    return this.roomMeshes.map(r => r.threeMesh.geometry)
+    return this.roomMeshes.map(r => {
+      const geo = r.threeMesh.geometry.clone()
+      r.threeMesh.updateWorldMatrix(true, false)
+      geo.applyMatrix4(r.threeMesh.matrixWorld)
+      return geo
+    })
   }
 }
