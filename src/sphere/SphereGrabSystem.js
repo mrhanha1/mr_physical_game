@@ -149,8 +149,8 @@ export class SphereGrabSystem {
     body.setGravityScale(0.0, true)
     body.setLinearDamping(20)
     body.setAngularDamping(20)
-    body.setLinVel(this._zeroVec3, true)
-    body.setAngVel(this._zeroVec3, true)
+    body.setLinvel(this._zeroVec3, true)
+    body.setAngvel(this._zeroVec3, true)
 
     // Gắn mesh vào group của controller grip (nhìn tự nhiên hơn)
     const worldPos = new THREE.Vector3()
@@ -183,8 +183,8 @@ export class SphereGrabSystem {
 
     // Teleport Rapier body tới vị trí đó
     body.setTranslation({ x: worldPos.x, y: worldPos.y, z: worldPos.z }, true)
-    body.setLinVel(this._zeroVec3, true)
-    body.setAngVel(this._zeroVec3, true)
+    body.setLinvel(this._zeroVec3, true)
+    body.setAngvel(this._zeroVec3, true)
   }
 
   _releaseSphere(hand, throwVelocity) {
@@ -207,13 +207,13 @@ export class SphereGrabSystem {
     if (speed > THROW_THRESHOLD) {
       // Ném
       const v = throwVelocity.multiplyScalar(THROW_SCALE)
-      body.setLinVel({ x: v.x, y: v.y, z: v.z }, true)
+      body.setLinvel({ x: v.x, y: v.y, z: v.z }, true)
       this.haptic.vibrate(hand, 100, 0.8)
       this.audio?.play('sphereThrow')
       console.log(`[Grab] ${hand} threw at ${speed.toFixed(2)} m/s`)
     } else {
       // Thả nhẹ
-      body.setLinVel(this._zeroVec3, true)
+      body.setLinvel(this._zeroVec3, true)
       this.audio?.play('sphereDrop')
     }
 

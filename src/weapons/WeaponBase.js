@@ -129,11 +129,11 @@ export class WeaponBase {
     sphere.body.setAngularDamping(0.1)
 
     const v = this._aimDir.clone().multiplyScalar(this.muzzleVelocity)
-    sphere.body.setLinVel({ x: v.x, y: v.y, z: v.z }, true)
+    sphere.body.setLinvel({ x: v.x, y: v.y, z: v.z }, true)
 
     // Xoay theo hướng bay
     const randomSpin = { x: (Math.random() - 0.5) * 20, y: (Math.random() - 0.5) * 20, z: (Math.random() - 0.5) * 20 }
-    sphere.body.setAngVel(randomSpin, true)
+    sphere.body.setAngvel(randomSpin, true)
 
     this._lastFiredAt = now
 
@@ -169,8 +169,8 @@ export class WeaponBase {
 
     // Ẩn sphere + tắt physics (gravity 0, dừng velocity)
     sphereData.body.setGravityScale(0, true)
-    sphereData.body.setLinVel({ x: 0, y: 0, z: 0 }, true)
-    sphereData.body.setAngVel({ x: 0, y: 0, z: 0 }, true)
+    sphereData.body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+    sphereData.body.setAngvel({ x: 0, y: 0, z: 0 }, true)
 
     // Hiện sphere nhỏ trong buồng đạn (gắn vào chamber point trên mesh súng)
     this.mesh.add(sphereData.mesh)
