@@ -229,6 +229,13 @@ renderer.renderer.setAnimationLoop((time, frame) => {
 
   // ── Input ──
   controllerInput.update(frame)
+  for (const evt of controllerInput.getEvents()) {
+    if (evt.action === 'start_game' && !gameStarted) {
+      _spawnInitialSpheres()
+      gamePanel.hide()
+      rayPointer.setVisible(false)
+    }
+  }
   locomotion.update(dt, controllerInput.getThumbstickX('right'))
 
   // ── Depth + Light ──
