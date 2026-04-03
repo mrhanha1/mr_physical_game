@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5173",
-    "build": "",
-    "preview": ""
+    "build": "vite build",
+    "preview": "vite preview --host"
   },
   "devDependencies": {
     "vite": "^5.4.0",
