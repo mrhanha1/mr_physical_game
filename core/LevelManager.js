@@ -286,6 +286,7 @@ export class LevelManager {
   fillSlot(slot, sphere) {
     slot.filled = true;
     sphere.userData.isLocked = true;
+    sphere.visible = false;
 
     // Snap sphere to slot center
     const slotWorld = new THREE.Vector3();
