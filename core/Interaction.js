@@ -256,14 +256,14 @@ export class Interaction {
     }
   }
   update(delta) {
-    // Track velocity của sphere đang được cầm
     for (const state of this.grabState) {
       if (state.isGrabbing && state.grabbed) {
-        state.tracker.record(state.grabbed.position);
+        const worldPos = new THREE.Vector3();
+        state.grabbed.getWorldPosition(worldPos);
+        state.tracker.record(worldPos);
       }
     }
 
-    // Update inertia cho các sphere đã thả
     this.physicsBodies = this.physicsBodies.filter(body => {
       body.update(delta);
       return body.active;
