@@ -288,13 +288,10 @@ export class LevelManager {
     sphere.userData.isLocked = true;
     sphere.visible = false;
 
-    // Snap sphere to slot center
-    const slotWorld = new THREE.Vector3();
-    slot.mesh.getWorldPosition(slotWorld);
-    sphere.position.copy(slotWorld);
-    sphere.position.y += 0.02;
+    // Lưu position TRƯỚC khi remove
+    const localPos = slot.mesh.position.clone(); // ← phải trước remove
 
-    // Replace slot ring with filled disc
+    // Replace visual
     const preset = COLOR_PRESETS[slot.expectedColorIndex];
     const color = new THREE.Color(preset.hex);
     const fillGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.015, 32);
@@ -307,17 +304,13 @@ export class LevelManager {
       clearcoat: 1.0,
     });
     const fillDisc = new THREE.Mesh(fillGeo, fillMat);
-    const slotLocalPos = slot.mesh.position.clone();
-    fillDisc.position.copy(slotLocalPos);
+    fillDisc.position.copy(localPos); // ← dùng localPos đã lưu
+
+    this.colorCircle.remove(slot.mesh); // ← remove sau
     this.colorCircle.add(fillDisc);
 
-    // Animate fill
     this._animateFill(fillDisc, color);
 
-    // Remove the empty slot visual
-    this.colorCircle.remove(slot.mesh);
-
-    // Check win condition
     if (this.slots.every((s) => s.filled)) {
       setTimeout(() => this._onWin(), 1000);
     }

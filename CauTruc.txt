@@ -27,6 +27,16 @@ Three.js r170 + WebXR + Meta Quest 3
 │                       onDrop: check distance < threshold + color match.
 │                       Đúng → lock sphere vào slot + AudioManager.playCorrect().
 │                       Sai  → AudioManager.playFail() + haptic pulse controller.
+│                       Tích hợp PhysicsBody: tính world-space velocity qua
+│                       VelocityTracker (rolling buffer 4 frame) khi đang cầm,
+│                       apply inertia khi thả nếu không snap vào slot.
+│
+├── PhysicsBody.js      Inertia system cho sphere sau khi thả.
+│                       PhysicsBody: apply velocity + gravity (-4 m/s²) + damping
+│                       (0.92/frame) + floor clamp (y=0.05) + bounce nhỏ.
+│                       Dừng khi speed < 0.02. Tự xóa khỏi physicsBodies[].
+│                       VelocityTracker: rolling buffer 4 frame world position,
+│                       tính velocity trung bình để tránh spike khi tay giật cục.
 │
 └── AudioManager.js     1 AudioListener gắn camera. 3 PositionalAudio:
 │                         correct.mp3 → phát tại vị trí slot.
