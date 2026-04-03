@@ -113,11 +113,13 @@ sceneManager.setAnimationLoop((timestamp, frame) => {
   if (activeMode === 'vr') {
     vrMode.update(delta);
     interaction.updateLocomotion(delta, 2.5);
+    interaction.update(delta);
   }
 
   if (activeMode === 'ar') {
     const refSpace = sceneManager.getReferenceSpace();
     arMode.update(frame, refSpace);
+    interaction.update(delta);
   }
 
   levelManager.update(delta);

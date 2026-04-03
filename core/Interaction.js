@@ -1,5 +1,6 @@
 // Interaction.js - Grab/Drop system (inspired by webxr_xr_dragging)
 import * as THREE from 'three';
+import { PhysicsBody, VelocityTracker } from './PhysicsBody.js';
 
 export class Interaction {
   constructor(sceneManager, levelManager, audioManager, sphereGenerator) {
@@ -8,12 +9,14 @@ export class Interaction {
     this.levelManager = levelManager;
     this.audio = audioManager;
     this.sphereGenerator = sphereGenerator;
+    
 
     // Per-controller grab state
     this.grabState = [
       { isGrabbing: false, grabbed: null, previousPosition: new THREE.Vector3() },
       { isGrabbing: false, grabbed: null, previousPosition: new THREE.Vector3() },
     ];
+    this.physicsBodies = [];
 
     this._raycaster = new THREE.Raycaster();
     this._tempMatrix = new THREE.Matrix4();
@@ -45,6 +48,7 @@ export class Interaction {
     if (distance > 0.25 || sphere.userData.isLocked) return;
 
     state.isGrabbing = true;
+    state.tracker.reset();
     state.grabbed = sphere;
     state.previousPosition.copy(sphere.position);
     sphere.userData.isGrabbed = true;
@@ -71,6 +75,14 @@ export class Interaction {
 
     // Detach from controller back to scene
     this.scene.attach(sphere);
+
+    // Tính velocity từ buffer rồi tạo PhysicsBody
+    if (!result || !result.colorMatch) { // chỉ apply inertia nếu không snap vào slot
+      const vel = state.tracker.compute();
+      if (vel.length() > 0.1) { // ngưỡng tối thiểu để không apply khi thả đứng yên
+        this.physicsBodies.push(new PhysicsBody(sphere, vel));
+      }
+    }
 
     state.isGrabbing = false;
     state.grabbed = null;
@@ -245,5 +257,19 @@ export class Interaction {
     } catch (e) {
       // Not in XR or feature unavailable
     }
+  }
+  update(delta) {
+    // Track velocity của sphere đang được cầm
+    for (const state of this.grabState) {
+      if (state.isGrabbing && state.grabbed) {
+        state.tracker.record(state.grabbed.position);
+      }
+    }
+
+    // Update inertia cho các sphere đã thả
+    this.physicsBodies = this.physicsBodies.filter(body => {
+      body.update(delta);
+      return body.active;
+    });
   }
 }
