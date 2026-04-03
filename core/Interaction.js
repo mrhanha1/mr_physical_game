@@ -264,9 +264,27 @@ export class Interaction {
       }
     }
 
-    this.physicsBodies = this.physicsBodies.filter(body => {
-      body.update(delta);
-      return body.active;
-    });
+    const toRemoveFromPhysics = [];
+
+      this.physicsBodies = this.physicsBodies.filter(body => {
+        body.update(delta);
+
+        // Check nếu sphere đang lăn vào gần slot
+        if (body.active && !body.sphere.userData.isLocked) {
+          body.sphere.getWorldPosition(this._worldPos);
+          const result = this.levelManager.checkDrop(body.sphere, this._worldPos);
+          if (result) {
+            if (result.colorMatch) {
+              this._onCorrectDrop(body.sphere, result.slot, 0);
+            } else {
+              this._onWrongDrop(body.sphere, 0);
+            }
+            body.active = false; // dừng physics body này
+            return false;
+          }
+        }
+
+        return body.active;
+      });
   }
 }
