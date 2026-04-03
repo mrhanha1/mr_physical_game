@@ -13,8 +13,8 @@ export class Interaction {
 
     // Per-controller grab state
     this.grabState = [
-      { isGrabbing: false, grabbed: null, previousPosition: new THREE.Vector3() },
-      { isGrabbing: false, grabbed: null, previousPosition: new THREE.Vector3() },
+      { isGrabbing: false, grabbed: null, previousPosition: new THREE.Vector3(),tracker: new VelocityTracker() },
+      { isGrabbing: false, grabbed: null, previousPosition: new THREE.Vector3(),tracker: new VelocityTracker() },
     ];
     this.physicsBodies = [];
 
@@ -73,24 +73,16 @@ export class Interaction {
     sphere.userData.isGrabbed = false;
     sphere.scale.set(1, 1, 1);
 
-    // Detach from controller back to scene
+    // 1. Lưu velocity TRƯỚC khi detach
+    const vel = state.tracker.compute();
+
+    // 2. Detach
     this.scene.attach(sphere);
-
-    // Tính velocity từ buffer rồi tạo PhysicsBody
-    if (!result || !result.colorMatch) { // chỉ apply inertia nếu không snap vào slot
-      const vel = state.tracker.compute();
-      if (vel.length() > 0.1) { // ngưỡng tối thiểu để không apply khi thả đứng yên
-        this.physicsBodies.push(new PhysicsBody(sphere, vel));
-      }
-    }
-
     state.isGrabbing = false;
     state.grabbed = null;
 
-    // Get world position of released sphere
+    // 3. Check drop
     sphere.getWorldPosition(this._worldPos);
-
-    // Check if drop is near a valid slot
     const result = this.levelManager.checkDrop(sphere, this._worldPos);
 
     if (result) {
@@ -100,6 +92,11 @@ export class Interaction {
       } else {
         // WRONG COLOR
         this._onWrongDrop(sphere, controllerIndex);
+      }
+    } else {
+      // 4. Không gần slot nào → apply inertia
+      if (vel.length() > 0.1) {
+        this.physicsBodies.push(new PhysicsBody(sphere, vel));
       }
     }
   }
