@@ -178,6 +178,12 @@ export class LevelManager {
     slotGroup.userData.isSlot = true;
     slotGroup.userData.expectedColorIndex = colorIndex;
     slotGroup.userData.filled = false;
+
+    slotGroup.position.set(x, 0.005, z);
+  // và bỏ position khỏi các child:
+  slotRing.position.set(0, 0, 0);
+  ghost.position.set(0, 0, 0);
+
     parent.add(slotGroup);
 
     // Hover target - the ring itself

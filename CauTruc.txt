@@ -1,0 +1,70 @@
+====================================================
+CẤU TRÚC HỆ THỐNG - Color Wheel VR/AR Game
+Three.js r170 + WebXR + Meta Quest 3
+====================================================
+
+📁 ROOT
+├── index.html          Entry point. Load main.js, chứa canvas WebXR.
+├── main.js             Khởi tạo SceneManager, chọn mode VR/AR, vòng lặp animation.
+├── vite.config.js      Cấu hình Vite: HTTPS (basicSsl), host LAN, build esnext.
+├── package.json        Dependencies: three, vite, plugin-basic-ssl. Scripts: dev/build/preview.
+├── vercel.json         Deploy config: buildCommand, outputDirectory, rewrites.
+└── .gitignore          Bỏ qua: node_modules, dist, .env, .vercel.
+
+📁 core/
+├── SceneManager.js     Tạo scene, camera, renderer WebXR. Quản lý switch session
+│                       immersive-vr / immersive-ar. referenceSpace: local-floor.
+│
+├── SphereGenerator.js  Array 12 màu HSL preset (bước 30°). Spawn sphere random
+│                       position mỗi level. userData.color lưu hex HSL.
+│
+├── LevelManager.js     Mỗi level = 1 ColorCircle (Group, 12 slot trên vòng tròn).
+│                       3 slot primary (0°/120°/240°) tô màu sẵn, không tương tác.
+│                       9 slot còn lại rỗng, userData.expectedColor.
+│                       Win condition: 9 slot filled đúng → next level.
+│
+├── Interaction.js      Fork grab/drop từ webxr_xr_dragging.html.
+│                       onDrop: check distance < threshold + color match.
+│                       Đúng → lock sphere vào slot + AudioManager.playCorrect().
+│                       Sai  → AudioManager.playFail() + haptic pulse controller.
+│
+└── AudioManager.js     1 AudioListener gắn camera. 3 PositionalAudio:
+│                         correct.mp3 → phát tại vị trí slot.
+│                         fail.mp3    → phát tại vị trí controller.
+│                         ambient.mp3 → loop, volume thấp, gắn scene center.
+
+📁 modes/
+├── VRMode.js           Virtual room: BoxGeometry 6 mặt, MeshPhongMaterial.
+│                       Left joystick: gamepad.axes[0,1] → translate camera.
+│                       Right controller: grab/drop qua Interaction.js.
+│                       Dùng XRControllerModelFactory render model tay cầm.
+│
+└── ARMode.js           Session: immersive-ar + hit-test + local-floor.
+                        XRHitTestSource từ viewer space → detect mặt phẳng sàn.
+                        Tap đặt ColorCircle anchor cố định trên sàn thực.
+                        Passthrough, không tạo virtual room.
+                        Sphere spawn quanh vị trí anchor.
+
+📁 assets/
+├── correct.mp3         Âm thanh khi thả sphere đúng vị trí.
+├── fail.mp3            Âm thanh khi thả sphere sai vị trí.
+├── ambient.mp3         Nhạc nền loop, volume thấp.
+└── README.md           Ghi chú assets.
+
+====================================================
+COLOR SYSTEM
+====================================================
+Bậc 1 - Primary (slot có màu sẵn):
+  0°   = Red     #FF0000
+  120° = Green   #00FF00
+  240° = Blue    #0000FF
+
+Bậc 2 - Secondary (slot trống):
+  60°  = Yellow    #FFFF00
+  180° = Cyan      #00FFFF
+  300° = Magenta   #FF00FF
+
+Bậc 3 - Tertiary (slot trống):
+  30°  = Chartreuse   90°  = Spring Green
+  150° = Azure        210° = Violet
+  270° = Rose         330° = Orange
