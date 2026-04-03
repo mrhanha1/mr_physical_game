@@ -1,10 +1,23 @@
+import { GameMode } from '../core/GameMode.js'
+
+// ── XRSession.js ──────────────────────────────────────────────────────────
+// Chỉ hoạt động khi GameMode.isAR().
+// Flatscreen mode bỏ qua toàn bộ class này.
+
 export class XRSession {
   constructor(renderer) {
-    this.renderer = renderer
-    this.session = null
+    this.renderer     = renderer
+    this.session      = null
+    this._initialized = false   // guard chống double-init
   }
 
   async init() {
+    if (this._initialized) {
+      console.warn('[XR] init() gọi lại — bỏ qua (đã initialized)')
+      return
+    }
+    this._initialized = true
+
     console.log('[XR] Checking support...')
     const supported = await navigator.xr?.isSessionSupported('immersive-ar')
     console.log('[XR] immersive-ar supported:', supported)

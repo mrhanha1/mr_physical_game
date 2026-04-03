@@ -6,11 +6,17 @@ project-root/
 │
 └── src/
     ├── main.js
-    │     Điểm khởi động toàn bộ game. Khởi tạo và kết nối tất cả
-    │     các hệ thống, chạy animation loop XR, xử lý auto-spawn
-    │     sphere và cập nhật HUD mỗi frame.
+    │     Điểm khởi động toàn bộ game. Hiển thị DOM overlay chọn mode
+    │     (AR / Flat) trước khi vào XR. Khởi tạo tất cả hệ thống chung,
+    │     chạy một animation loop XR duy nhất cho cả 2 mode, guard các
+    │     hệ thống AR-only bằng GameMode.isAR(). Xử lý auto-spawn sphere
+    │     và cập nhật HUD mỗi frame.
     │
     ├── core/
+    │   ├── GameMode.js
+    │   │     Singleton lưu mode hiện tại (AR | FLATSCREEN). Set trước
+    │   │     khi khởi tạo XR session. Cung cấp isAR(), isFlatscreen().
+    │   │
     │   ├── Renderer.js
     │   │     Tạo THREE.WebGLRenderer với alpha=true (passthrough MR),
     │   │     bật XR mode.
@@ -18,16 +24,18 @@ project-root/
     │   ├── XRSession.js
     │   │     Kiểm tra hỗ trợ WebXR, yêu cầu session immersive-ar với
     │   │     các feature: plane-detection, mesh-detection, hand-tracking,
-    │   │     depth-sensing.
+    │   │     depth-sensing. Chạy cho cả 2 mode vì đều chơi trên Quest 3.
     │   │
     │   ├── PhysicsWorld.js
     │   │     Wrapper Rapier3D: khởi tạo world với gravity -9.81,
-    │   │     thêm static collider từ room mesh, bước simulation mỗi
-    │   │     frame, sync vị trí THREE mesh theo Rapier body.
+    │   │     thêm static collider từ room mesh (AR) hoặc cuboid tường/sàn
+    │   │     tĩnh (Flat) qua addFlatRoom(), bước simulation mỗi frame,
+    │   │     sync vị trí THREE mesh theo Rapier body.
     │   │
     │   ├── DepthSensor.js
     │   │     Đọc depth buffer từ XR frame, tạo DataTexture để shader
     │   │     occlusion biết vật thể thực nào đang che vật 3D.
+    │   │     Chỉ khởi tạo trong AR mode.
     │   │
     │   └── OcclusionMaterial.js
     │         Cập nhật uniforms (depth texture, UV transform) cho
@@ -35,24 +43,32 @@ project-root/
     │
     ├── world/
     │   ├── PlaneDetector.js
-    │   │     Phân loại các mặt phẳng XR thành sàn/tường/bàn, tạo
-    │   │     mesh hiển thị bán trong suốt, cung cấp điểm spawn
+    │   │     [AR only] Phân loại các mặt phẳng XR thành sàn/tường/bàn,
+    │   │     tạo mesh hiển thị bán trong suốt, cung cấp điểm spawn
     │   │     ngẫu nhiên trên sàn.
     │   │
     │   ├── MeshDetector.js
-    │   │     Xây dựng THREE.BufferGeometry từ XR room mesh,
+    │   │     [AR only] Xây dựng THREE.BufferGeometry từ XR room mesh,
     │   │     feed geometry vào PhysicsWorld làm static collider.
+    │   │
+    │   ├── FlatWorldBuilder.js
+    │   │     [Flat only] Tạo không gian tĩnh: sàn + 4 tường bằng
+    │   │     PlaneGeometry, trả getGeometries() để feed vào physics.
+    │   │     Thay thế PlaneDetector + MeshDetector trong Flat mode.
     │   │
     │   └── SceneManager.js
     │         Tiện ích quản lý scene (thêm/xóa object tập trung).
     │
     ├── player/
     │   ├── PlayerRig.js
-    │   │     Lấy vị trí world của camera XR (vị trí đầu người chơi).
+    │   │     Lấy vị trí world của camera XR (vị trí đầu người chơi)
+    │   │     qua cameras[0].getWorldPosition() để tránh bug ArrayCamera.
+    │   │     Render mesh controller cho cả 2 tay.
     │   │
     │   ├── ControllerInput.js
-    │   │     Đọc gamepad của 2 controller: trigger, grip (value liên
-    │   │     tục), thumbstick, button A/B. Phát event queue mỗi frame.
+    │   │     Đọc gamepad của 2 controller qua WebXR input sources:
+    │   │     trigger, grip, thumbstickX, thumbstickY, button A/B.
+    │   │     Phát event queue mỗi frame.
     │   │
     │   ├── HandTracking.js
     │   │     Theo dõi 25 joint của bàn tay qua WebXR Hand API,
@@ -62,7 +78,10 @@ project-root/
     │   │     Gửi haptic pulse tới controller (tay, thời gian, cường độ).
     │   │
     │   └── Locomotion.js
-    │         Dịch chuyển player theo thumbstick phải (smooth locomotion).
+    │         AR mode: snap turn 45° bằng thumbstick phải.
+    │         Flat mode: smooth locomotion bằng thumbstick trái,
+    │         hướng di chuyển theo forward của XR camera,
+    │         dịch chuyển camera rig (xrCam.parent).
     │
     ├── sphere/
     │   ├── SphereMaterials.js
@@ -116,8 +135,9 @@ project-root/
     │   │     hướng nhìn vào cổ tay.
     │   │
     │   ├── GamePanel.js
-    │   │     Panel 3D nổi trong không gian, hiển thị menu Start/Restart,
-    │   │     dùng canvas hologram shader, nổi trước mặt player.
+    │   │     Panel 3D nổi trong không gian. Hiển thị menu Start/Restart,
+    │   │     nổi trước mặt player. Dùng canvas texture + MeshBasicMaterial.
+    │   │     Hitbox vô hình cho RayPointer (startButton, restartButton).
     │   │
     │   ├── RayPointer.js
     │   │     Tia laser từ right controller để tương tác với UI panel.
