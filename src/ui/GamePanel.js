@@ -24,7 +24,7 @@ export class GamePanel {
       this._button(ctx, 'B = START', 256, 260, '#00cc66')
     })
     this.mesh.visible = true
-    this.startButton.visible   = false  // không cần nữa
+    this.startButton.visible   = true
     this.restartButton.visible = false
   }
 
@@ -51,7 +51,7 @@ export class GamePanel {
     })
     this.mesh.visible = true
     this.startButton.visible   = false
-    this.restartButton.visible = false  // không cần hitbox nữa
+    this.restartButton.visible = true
   }
 
   updateBreakTimer(secondsLeft, waveNumber, score) {
@@ -88,13 +88,10 @@ export class GamePanel {
     this.mesh.visible = false
     this.scene.add(this.mesh)
 
-    // Hitbox vô hình — chỉ để RayPointer intersect
-    this.startButton   = this._makeHitbox('start',   new THREE.Vector3(0, -0.10, 0.002))
-    this.restartButton = this._makeHitbox('restart', new THREE.Vector3(0, -0.10, 0.002))
-    this.mesh.add(this.startButton)
-    this.mesh.add(this.restartButton)
-    this.startButton.visible   = false
-    this.restartButton.visible = false
+    this.actionButton = this._makeHitbox('start', new THREE.Vector3(0, -0.10, 0.002))
+    this.mesh.add(this.actionButton)
+    
+    this.startButton = this.restartButton = this.actionButton
   }
 
   _makeHitbox(action, offset) {

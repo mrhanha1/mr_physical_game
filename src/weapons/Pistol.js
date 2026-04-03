@@ -68,10 +68,6 @@ export class Pistol extends WeaponBase {
     return { held, aimDir, muzzlePos }
   }
 
-  _fireHaptic() {
-    this.haptic.vibrate('right', 80, 0.9)
-  }
-
   // ── Private ────────────────────────────────────────────────────────────────
 
   _buildMesh() {

@@ -94,12 +94,6 @@ export class Rifle extends WeaponBase {
     }
   }
 
-  // Override _checkFire để thêm điều kiện "phải 2 tay"
-  _checkFire(frame) {
-    if (!this._isHeld) return
-    super._checkFire(frame)
-  }
-
   // ── Private ────────────────────────────────────────────────────────────────
 
   _buildMesh() {

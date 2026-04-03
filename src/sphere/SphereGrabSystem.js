@@ -75,12 +75,11 @@ export class SphereGrabSystem {
       const prevGrip  = this._gripVal[hand] ?? 0
       this._gripVal[hand] = gripVal
 
-      // Lấy world position của controller grip
-      const controllers = [
-        this.renderer.xr.getControllerGrip(0),
-        this.renderer.xr.getControllerGrip(1),
-      ]
-      const gripObj = controllers.find(c => c.inputSource?.handedness === hand)
+      let gripObj = null
+      for (let i = 0; i < 2; i++) {
+        const g = this.renderer.xr.getControllerGrip(i)
+        if (g.inputSource?.handedness === hand) { gripObj = g; break }
+      }
       if (!gripObj) continue
       gripObj.getWorldPosition(this._tmpPos)
       const handPos = this._tmpPos.clone()

@@ -5,8 +5,6 @@ import { Renderer }        from './core/Renderer.js'
 import { XRSession }       from './core/XRSession.js'
 import { PhysicsWorld }    from './core/PhysicsWorld.js'
 import { DepthSensor }     from './core/DepthSensor.js'
-import { LightEstimator }  from './core/LightEstimator.js'
-import { updateOcclusionUniforms } from './core/OcclusionMaterial.js'
 
 // ── World ─────────────────────────────────────────────────────────────────
 import { PlaneDetector }   from './world/PlaneDetector.js'
@@ -35,7 +33,6 @@ import { AudioManager }    from './audio/AudioManager.js'
 import { WristHUD }        from './ui/WristHUD.js'
 import { RayPointer }      from './ui/RayPointer.js'
 import { GamePanel }       from './ui/GamePanel.js'
-import { ComfortMenu }     from './ui/ComfortMenu.js'
 
 // ═════════════════════════════════════════════════════════════════════════
 // KHỞI TẠO
@@ -54,7 +51,7 @@ const xrSession = new XRSession(renderer)
 const scene     = new THREE.Scene()
 const camera    = new THREE.PerspectiveCamera()
 
-// Ánh sáng cơ bản (LightEstimator sẽ override khi vào AR)
+// Ánh sáng cơ bản
 const dirLight     = new THREE.DirectionalLight(0xffffff, 1.2)
 dirLight.position.set(1, 2, 1)
 scene.add(dirLight)
@@ -63,7 +60,6 @@ scene.add(ambientLight)
 
 // ── Depth + Light ──
 const depthSensor    = new DepthSensor()
-const lightEstimator = new LightEstimator(dirLight, ambientLight)
 
 // ── World ──
 const sceneManager  = new SceneManager(scene)
@@ -99,13 +95,11 @@ const rifle      = new Rifle(weaponOpts)
 // ── UI ──
 const wristHUD    = new WristHUD(scene, renderer.renderer)
 const gamePanel   = new GamePanel(scene)
-const comfortMenu = new ComfortMenu(scene, renderer.renderer, locomotion)
 const rayPointer  = new RayPointer(renderer.renderer, scene, controllerInput)
 
 // Đăng ký button targets cho ray pointer
 rayPointer.addTarget(gamePanel.startButton)
 rayPointer.addTarget(gamePanel.restartButton)
-for (const btn of comfortMenu.getButtons()) rayPointer.addTarget(btn)
 
 rayPointer.onSelect = (mesh) => {
   const action = mesh.userData.action
@@ -114,9 +108,6 @@ rayPointer.onSelect = (mesh) => {
     _spawnInitialSpheres()
     gamePanel.hide()
     rayPointer.setVisible(false)
-    comfortMenu.close()
-  } else {
-    comfortMenu.handleAction(action)
   }
 }
 
@@ -129,7 +120,6 @@ await xrSession.init()
 
 let referenceSpace  = null
 let roomFed         = false
-let reverbSet       = false
 let lastTime        = 0
 let elapsedTime     = 0
 let gameStarted     = false
@@ -193,7 +183,6 @@ renderer.renderer.xr.addEventListener('sessionstart', async () => {
   }
 
   depthSensor.checkSupport(session)
-  lightEstimator.init(session)
 
   // Hiển thị panel + ray pointer
   gamePanel.showMenu(0)
@@ -227,29 +216,22 @@ renderer.renderer.setAnimationLoop((time, frame) => {
     roomFed = true
     console.log('[Physics] Room mesh fed')
   }
-
-  // Đặt reverb theo kích thước phòng (1 lần)
-  if (!reverbSet && planeDetector.isReady()) {
-    audio.estimateRoomSizeAndSetReverb(planeDetector, frame, referenceSpace)
-    reverbSet = true
-  }
-
   // ── Input ──
   controllerInput.update(frame)
   for (const evt of controllerInput.getEvents()) {
     if (evt.action === 'start_game' && !gameStarted) {
-      _spawnInitialSpheres()
+      _spawnInitialSpheres()   // đã set gameStarted = true bên trong
       gamePanel.hide()
       rayPointer.setVisible(false)
     }
   }
+
   locomotion.update(dt, controllerInput.getThumbstickX('right'))
 
   // ── Depth + Light ──
   const viewerPose = frame.getViewerPose(referenceSpace)
   if (viewerPose) {
     depthSensor.update(frame, viewerPose.views[0], referenceSpace)
-    lightEstimator.update(frame)
   }
 
   // ── Hand tracking ──
@@ -297,17 +279,13 @@ renderer.renderer.setAnimationLoop((time, frame) => {
   wristHUD.setTotalSpheres(sphereManager.count)
   wristHUD.update()
 
-  // ── UI panels ──
-  if (gamePanel.mesh.visible) {
-    // Panel nổi trước mặt player
-    gamePanel.mesh.position.copy(playerPos).addScaledVector(camFwd, 1.2)
-    gamePanel.mesh.position.y = playerPos.y + 0.1
-    gamePanel.mesh.lookAt(playerPos)
-    rayPointer.update()
-  }
-
-  if (comfortMenu.isOpen) {
-    rayPointer.setVisible(true)
+  const showRay = gamePanel.mesh.visible
+  if (showRay) {
+    if (gamePanel.mesh.visible) {
+      gamePanel.mesh.position.copy(playerPos).addScaledVector(camFwd, 1.2)
+      gamePanel.mesh.position.y = playerPos.y + 0.1
+      gamePanel.mesh.lookAt(playerPos)
+    }
     rayPointer.update()
   }
 

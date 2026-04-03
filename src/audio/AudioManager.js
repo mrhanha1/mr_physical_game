@@ -47,11 +47,6 @@ export class AudioManager {
 
     const { howl, def } = entry
     const id = howl.play()
-    // Random pitch
-    if (def.rate[0] !== def.rate[1]) {
-      const rate = def.rate[0] + Math.random() * (def.rate[1] - def.rate[0])
-      howl.rate(rate, id)
-    }
     return id
   }
 
@@ -88,84 +83,6 @@ export class AudioManager {
       distanceModel: 'inverse',
     }, id)
 
-    // Random pitch
-    if (def.rate[0] !== def.rate[1]) {
-      const rate = def.rate[0] + Math.random() * (def.rate[1] - def.rate[0])
-      howl.rate(rate, id)
-    }
-
     return id
-  }
-
-  // Ước tính reverb từ kích thước phòng (diện tích sàn m²)
-  // Gọi 1 lần sau khi PlaneDetector sẵn sàng
-  setRoomReverb(floorAreaSqM) {
-    if (!Howler.ctx) return
-
-    // Tạo ConvolverNode đơn giản từ impulse response tổng hợp
-    const ctx = Howler.ctx
-    const duration = Math.min(0.5 + floorAreaSqM * 0.02, 2.5)  // 0.5s–2.5s
-    const decay = Math.max(0.1, 1 - floorAreaSqM * 0.01)
-
-    const sampleRate = ctx.sampleRate
-    const length = Math.floor(sampleRate * duration)
-    const impulse = ctx.createBuffer(2, length, sampleRate)
-
-    for (let c = 0; c < 2; c++) {
-      const data = impulse.getChannelData(c)
-      for (let i = 0; i < length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay * 10)
-      }
-    }
-
-    if (this._convolver) {
-      this._convolver.disconnect()
-    }
-
-    this._convolver = ctx.createConvolver()
-    this._convolver.buffer = impulse
-
-    // Wet/dry mix
-    const dry = ctx.createGain()
-    const wet = ctx.createGain()
-    dry.gain.value = 0.8
-    wet.gain.value = Math.min(0.3, floorAreaSqM * 0.01)
-
-    Howler.masterGain.connect(dry)
-    Howler.masterGain.connect(this._convolver)
-    this._convolver.connect(wet)
-    dry.connect(ctx.destination)
-    wet.connect(ctx.destination)
-
-    console.log(`[Audio] Reverb set: duration=${duration.toFixed(2)}s, area=${floorAreaSqM}m²`)
-  }
-
-  // Tính diện tích sàn từ polygon của PlaneDetector
-  // Gọi sau khi planeDetector.isReady()
-  estimateRoomSizeAndSetReverb(planeDetector, frame, referenceSpace) {
-    if (!planeDetector.floors.length) return
-
-    let totalArea = 0
-    for (const floor of planeDetector.floors) {
-      const pose = frame.getPose(floor.planeSpace, referenceSpace)
-      if (!pose) continue
-      totalArea += this._polygonArea(floor.polygon)
-    }
-
-    if (totalArea > 0) {
-      this.setRoomReverb(totalArea)
-    }
-  }
-
-  _polygonArea(polygon) {
-    // Shoelace formula trên XZ plane
-    let area = 0
-    const n = polygon.length
-    for (let i = 0; i < n; i++) {
-      const j = (i + 1) % n
-      area += polygon[i].x * polygon[j].z
-      area -= polygon[j].x * polygon[i].z
-    }
-    return Math.abs(area) / 2
   }
 }

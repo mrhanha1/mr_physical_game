@@ -29,6 +29,7 @@ export class WeaponBase {
     this.soundKey      = soundKey
     this.muzzleVelocity = muzzleVelocity
     this.cooldownMs    = cooldownMs
+    this._fireHands = ['right'] 
 
     // Sphere đã nạp vào buồng đạn
     this._chambered    = null
@@ -60,9 +61,6 @@ export class WeaponBase {
 
   /** Cập nhật vị trí mesh súng + aim direction. Trả về {held, aimDir, muzzlePos}. */
   _updateAim(frame) { throw new Error('_updateAim() not implemented') }
-
-  /** Haptic pattern khi bắn. */
-  _fireHaptic() {}
 
   // ── Public ────────────────────────────────────────────────────────────────
 
@@ -184,6 +182,7 @@ export class WeaponBase {
 
   /** Đọc trigger + gọi _fire nếu đủ điều kiện. Subclass override nếu cần thêm điều kiện. */
   _checkFire(frame) {
+    if (!this._isHeld) return
     const session = this.renderer.xr.getSession()
     if (!session) return
 

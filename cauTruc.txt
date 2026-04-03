@@ -18,7 +18,7 @@ project-root/
     │   ├── XRSession.js
     │   │     Kiểm tra hỗ trợ WebXR, yêu cầu session immersive-ar với
     │   │     các feature: plane-detection, mesh-detection, hand-tracking,
-    │   │     depth-sensing, light-estimation.
+    │   │     depth-sensing.
     │   │
     │   ├── PhysicsWorld.js
     │   │     Wrapper Rapier3D: khởi tạo world với gravity -9.81,
@@ -28,10 +28,6 @@ project-root/
     │   ├── DepthSensor.js
     │   │     Đọc depth buffer từ XR frame, tạo DataTexture để shader
     │   │     occlusion biết vật thể thực nào đang che vật 3D.
-    │   │
-    │   ├── LightEstimator.js
-    │   │     Lấy thông tin ánh sáng môi trường thực (XRLightProbe),
-    │   │     cập nhật DirectionalLight và AmbientLight của scene.
     │   │
     │   └── OcclusionMaterial.js
     │         Cập nhật uniforms (depth texture, UV transform) cho
@@ -68,7 +64,7 @@ project-root/
     │   └── Locomotion.js
     │         Dịch chuyển player theo thumbstick phải (smooth locomotion).
     │
-    ├── sphere/                          ── MỚI ──
+    ├── sphere/
     │   ├── SphereMaterials.js
     │   │     Định nghĩa 6 loại sphere (RED, BLUE, GOLD, GREEN, PURPLE,
     │   │     GLASS), mỗi loại có color, metalness, roughness, radius,
@@ -86,7 +82,7 @@ project-root/
     │         lịch sử vị trí 5 frame, ném với scale ×1.8. Hỗ trợ
     │         tách sphere để nạp vào súng.
     │
-    ├── weapons/                         ── VIẾT LẠI ──
+    ├── weapons/
     │   ├── WeaponBase.js
     │   │     Base class: nạp sphere vào buồng đạn, bắn với muzzle
     │   │     velocity thực + Rapier xử lý gravity, vẽ sight line laser,
@@ -105,8 +101,7 @@ project-root/
     │
     ├── audio/
     │   ├── AudioManager.js
-    │   │     Preload Howl sound, phát spatial 3D (HRTF), phát non-spatial,
-    │   │     random pitch, tính reverb từ diện tích sàn phòng (convolver).
+    │   │     Preload Howl sound, phát spatial 3D (HRTF), phát non-spatial.
     │   │
     │   └── SoundBank.js
     │         Danh sách sound assets: spherePickup, sphereDrop, sphereThrow,
@@ -127,10 +122,6 @@ project-root/
     │   ├── RayPointer.js
     │   │     Tia laser từ right controller để tương tác với UI panel.
     │   │     Đổi màu khi hover target, phát event select khi trigger.
-    │   │
-    │   ├── ComfortMenu.js
-    │   │     Menu cài đặt comfort (snap turn, vignette...), mở/đóng
-    │   │     theo button B/Y, nổi trước mặt player.
     │   │
     │   └── VRUI.js
     │         Lớp tiện ích UI chung (hiện chưa dùng nhiều).
