@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 const BUFFER_SIZE  = 4;      // rolling frame buffer để smooth velocity
 const GRAVITY      = -4.0;   // m/s²
-const DAMPING      = 0.92;   // hệ số giảm tốc mỗi frame
+const DAMPING      = 0.52;   // hệ số giảm tốc mỗi frame
 const STOP_THRESH  = 0.02;   // dừng hẳn khi speed < ngưỡng này
 const FLOOR_Y      = 0.05;   // sàn tối thiểu (tránh xuyên sàn)
 
@@ -11,18 +11,22 @@ export class PhysicsBody {
   /**
    * @param {THREE.Mesh} mesh
    * @param {THREE.Vector3} initialVelocity - vận tốc lúc thả (m/s)
+   * @param {boolean} useGravity - chỉ sphere bắn từ súng mới dùng gravity
    */
-  constructor(mesh, initialVelocity) {
-    this.mesh     = mesh;
-    this.velocity = initialVelocity.clone();
-    this.active   = true;
+  constructor(mesh, initialVelocity, useGravity = false) {
+    this.mesh       = mesh;
+    this.velocity   = initialVelocity.clone();
+    this.useGravity = useGravity;
+    this.active     = true;
   }
 
   update(delta) {
     if (!this.active) return;
 
-    // Gravity
-    this.velocity.y += GRAVITY * delta;
+    // Gravity - chỉ apply khi useGravity = true
+    if (this.useGravity) {
+      this.velocity.y += GRAVITY * delta;
+    }
 
     // Damping
     this.velocity.multiplyScalar(DAMPING);

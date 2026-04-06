@@ -5,6 +5,7 @@ import { SphereGenerator } from './core/SphereGenerator.js';
 import { LevelManager } from './core/LevelManager.js';
 import { Interaction } from './core/Interaction.js';
 import { AudioManager } from './core/AudioManager.js';
+import { GunMode } from './core/GunMode.js';
 import { VRMode } from './modes/VRMode.js';
 import { ARMode } from './modes/ARMode.js';
 
@@ -20,6 +21,9 @@ const audioManager  = new AudioManager(camera);
 const sphereGen     = new SphereGenerator(scene);
 const levelManager  = new LevelManager(scene, audioManager);
 const interaction   = new Interaction(sceneManager, levelManager, audioManager, sphereGen);
+const gunMode       = new GunMode(sceneManager, sphereGen, levelManager);
+
+interaction.setGunMode(gunMode);
 
 // ─── Modes ───────────────────────────────────────────────────────────────────
 
@@ -36,9 +40,7 @@ let activeMode = null; // 'vr' | 'ar' | null
 
 sceneManager.onXRSessionStart(() => {
   const session = sceneManager.renderer.xr.getSession();
-  const sessionMode = session.interactionMode ?? '';
 
-  // Detect mode via session type tag
   if (session.__colorWheelMode === 'ar') {
     activeMode = 'ar';
     vrMode.exit();
@@ -50,7 +52,6 @@ sceneManager.onXRSessionStart(() => {
     vrMode.enter();
     ui.setMode('vr');
 
-    // Auto-build circle + spawn spheres for VR
     const anchor = new THREE.Vector3(0, 0, -1.5);
     levelManager.buildColorCircle(anchor);
     const colorIndices = levelManager.getActiveSlotColorIndices();
@@ -67,6 +68,9 @@ sceneManager.onXRSessionEnd(() => {
   arMode.exit();
   levelManager.reset();
   sphereGen.clearAll();
+
+  // Reset gun mode khi thoát session
+  if (gunMode.isActive) gunMode.toggle();
   ui.setMode('desktop');
 });
 
@@ -109,22 +113,24 @@ const clock = new THREE.Clock();
 sceneManager.setAnimationLoop((timestamp, frame) => {
   const delta = Math.min(clock.getDelta(), 0.05);
 
-  // Update systems
   if (activeMode === 'vr') {
     vrMode.update(delta);
     interaction.updateLocomotion(delta, 2.5);
     interaction.update(delta);
+    gunMode.updateButtonInput();
+    gunMode.update(delta);
   }
 
   if (activeMode === 'ar') {
     const refSpace = sceneManager.getReferenceSpace();
     arMode.update(frame, refSpace);
     interaction.update(delta);
+    gunMode.updateButtonInput();
+    gunMode.update(delta);
   }
 
   levelManager.update(delta);
 
-  // Desktop: orbit camera slowly when not in XR
   if (!activeMode) {
     const t = timestamp * 0.0003;
     camera.position.x = Math.sin(t) * 3;
@@ -164,7 +170,6 @@ function buildUI() {
 }
 
 // ─── VR/AR Button Tag ─────────────────────────────────────────────────────────
-// We tag sessions at button click time so we can detect which mode was entered.
 
 (function patchButtons() {
   const vrBtn = sceneManager.setupVRButton();
@@ -193,7 +198,6 @@ function buildUI() {
     );
   });
 
-  // Initial UI state
   const uiRef = buildUI();
   uiRef.setMode('desktop');
   uiRef.updateLevel(1, levelManager.getLevelCount());
