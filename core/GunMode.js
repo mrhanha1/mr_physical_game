@@ -142,15 +142,11 @@ export class GunMode {
     try {
       const session = this.sceneManager.renderer.xr.getSession();
       if (!session) return;
-      // Thêm tạm vào updateButtonInput(), xóa sau khi xác nhận
-      console.log('right buttons:', Array.from(buttons).map((b,i) => `${i}:${b.pressed}`));
-      console.log('buttons length:', buttons?.length, rightSource?.handedness);
 
       let rightSource = null;
       let count = 0;
       for (const s of session.inputSources) {
-        if (count === 1) { rightSource = s; break; }
-        count++;
+        if (s.handedness === 'right') { rightSource = s; break; }
       }
       if (!rightSource?.gamepad) return;
 
