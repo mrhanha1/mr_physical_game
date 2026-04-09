@@ -39,8 +39,8 @@ export class GunMode {
       (gltf) => {
         this._gunModel = gltf.scene;
         // Điều chỉnh vị trí/xoay/scale cho vừa tay cầm - tinh chỉnh nếu cần
-        this._gunModel.scale.setScalar(0.15);
-        this._gunModel.rotation.set(0, Math.PI, 0);
+        this._gunModel.scale.setScalar(0.5);
+        this._gunModel.rotation.set(0, Math.PI*2, 0);
         this._gunModel.position.set(0, -0.02, -0.05);
         this._gunModel.visible = false;
         this._rightGrip.add(this._gunModel);
