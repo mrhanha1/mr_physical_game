@@ -68,6 +68,7 @@ export class GunMode {
 
   /** Toggle gun mode on/off */
   toggle() {
+    console.log('[GunMode] toggle called, isActive:', !this.isActive);
     this.isActive = !this.isActive;
 
     if (this._gunModel) this._gunModel.visible = this.isActive;
@@ -141,6 +142,9 @@ export class GunMode {
     try {
       const session = this.sceneManager.renderer.xr.getSession();
       if (!session) return;
+      // Thêm tạm vào updateButtonInput(), xóa sau khi xác nhận
+      console.log('right buttons:', Array.from(buttons).map((b,i) => `${i}:${b.pressed}`));
+      console.log('buttons length:', buttons?.length, rightSource?.handedness);
 
       let rightSource = null;
       let count = 0;

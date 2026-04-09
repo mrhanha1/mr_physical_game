@@ -31,6 +31,9 @@ export class LevelManager {
   constructor(scene, audioManager) {
     this.scene = scene;
     this.audio = audioManager;
+    this._pendingAnimations = [];
+    this._winAnim = null;
+    this._winDelay = null;
     this.currentLevelIndex = 0;
     this.colorCircle = null; // current Group
     this.slots = []; // { mesh, expectedColorIndex, filled }
@@ -47,12 +50,7 @@ export class LevelManager {
     return LEVELS.length;
   }
 
-  /**
-   * Build a ColorCircle at the given position.
-   * @param {THREE.Vector3} position - World position for circle center
-   */
   buildColorCircle(position) {
-    // Cleanup previous
     if (this.colorCircle) {
       this.scene.remove(this.colorCircle);
     }
@@ -65,7 +63,6 @@ export class LevelManager {
     group.position.copy(position);
     group.name = 'ColorCircle';
 
-    // Draw the ring background
     const ringGeo = new THREE.TorusGeometry(this.circleRadius + 0.04, 0.015, 16, 100);
     const ringMat = new THREE.MeshPhysicalMaterial({
       color: 0x334466,
@@ -78,7 +75,6 @@ export class LevelManager {
     ring.rotation.x = -Math.PI / 2;
     group.add(ring);
 
-    // Build all 12 slots
     const totalSlots = 12;
     const activeSlotIndices = new Set(level.slotColorIndices);
     const primarySet = new Set(PRIMARY_INDICES);
@@ -88,15 +84,13 @@ export class LevelManager {
       const x = Math.cos(angleRad) * this.circleRadius;
       const z = Math.sin(angleRad) * this.circleRadius;
 
-      const colorIndex = i; // slot i corresponds to color preset i
+      const colorIndex = i;
       const isPrimary = primarySet.has(colorIndex);
       const isActive = activeSlotIndices.has(colorIndex);
 
       if (isPrimary) {
-        // Pre-filled primary slot - solid colored disc
         this._addPrimarySlot(group, x, z, colorIndex, angleRad);
       } else if (isActive) {
-        // Empty slot waiting to be filled
         const slotMesh = this._addEmptySlot(group, x, z, colorIndex, angleRad);
         this.slots.push({
           mesh: slotMesh,
@@ -105,12 +99,10 @@ export class LevelManager {
           filled: false,
         });
       } else {
-        // Inactive slot (dim placeholder)
         this._addInactiveSlot(group, x, z);
       }
     }
 
-    // Center label
     this._addCenterLabel(group, level.name);
 
     this.colorCircle = group;
@@ -123,7 +115,6 @@ export class LevelManager {
     const preset = COLOR_PRESETS[colorIndex];
     const color = new THREE.Color(preset.hex);
 
-    // Disc
     const geo = new THREE.CylinderGeometry(0.07, 0.07, 0.015, 32);
     const mat = new THREE.MeshPhysicalMaterial({
       color,
@@ -139,7 +130,6 @@ export class LevelManager {
     disc.userData.isPrimary = true;
     parent.add(disc);
 
-    // Label
     this._addSlotLabel(parent, preset.name, x, 0.05, z);
   }
 
@@ -147,7 +137,6 @@ export class LevelManager {
     const preset = COLOR_PRESETS[colorIndex];
     const color = new THREE.Color(preset.hex);
 
-    // Hollow ring to show expected color
     const ringGeo = new THREE.TorusGeometry(0.065, 0.008, 16, 64);
     const ringMat = new THREE.MeshPhysicalMaterial({
       color,
@@ -158,9 +147,7 @@ export class LevelManager {
     });
     const slotRing = new THREE.Mesh(ringGeo, ringMat);
     slotRing.rotation.x = Math.PI / 2;
-    slotRing.position.set(x, 0.005, z);
 
-    // Ghost fill (very transparent)
     const ghostGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.008, 32);
     const ghostMat = new THREE.MeshPhysicalMaterial({
       color,
@@ -170,7 +157,6 @@ export class LevelManager {
       emissiveIntensity: 0.05,
     });
     const ghost = new THREE.Mesh(ghostGeo, ghostMat);
-    ghost.position.set(x, 0.005, z);
 
     const slotGroup = new THREE.Group();
     slotGroup.add(slotRing);
@@ -178,15 +164,13 @@ export class LevelManager {
     slotGroup.userData.isSlot = true;
     slotGroup.userData.expectedColorIndex = colorIndex;
     slotGroup.userData.filled = false;
-
     slotGroup.position.set(x, 0.005, z);
-  // và bỏ position khỏi các child:
-  slotRing.position.set(0, 0, 0);
-  ghost.position.set(0, 0, 0);
+
+    slotRing.position.set(0, 0, 0);
+    ghost.position.set(0, 0, 0);
 
     parent.add(slotGroup);
 
-    // Hover target - the ring itself
     return slotGroup;
   }
 
@@ -204,7 +188,6 @@ export class LevelManager {
   }
 
   _addCenterLabel(parent, text) {
-    // Canvas texture label
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 128;
@@ -249,12 +232,6 @@ export class LevelManager {
     parent.add(mesh);
   }
 
-  /**
-   * Called when a sphere is dropped near a slot.
-   * Returns { success, slot } or null if no close slot.
-   * @param {THREE.Mesh} sphere
-   * @param {THREE.Vector3} worldPos - where the sphere was dropped
-   */
   checkDrop(sphere, worldPos) {
     const DISTANCE_THRESHOLD = 0.15;
     let bestSlot = null;
@@ -263,7 +240,6 @@ export class LevelManager {
     for (const slot of this.slots) {
       if (slot.filled) continue;
 
-      // Convert slot local position to world
       const slotWorld = new THREE.Vector3();
       slot.mesh.getWorldPosition(slotWorld);
 
@@ -280,18 +256,13 @@ export class LevelManager {
     return { slot: bestSlot, colorMatch, distance: bestDist };
   }
 
-  /**
-   * Lock a sphere into a slot (correct drop).
-   */
   fillSlot(slot, sphere) {
     slot.filled = true;
     sphere.userData.isLocked = true;
     sphere.visible = false;
 
-    // Lưu position TRƯỚC khi remove
-    const localPos = slot.mesh.position.clone(); // ← phải trước remove
+    const localPos = slot.mesh.position.clone();
 
-    // Replace visual
     const preset = COLOR_PRESETS[slot.expectedColorIndex];
     const color = new THREE.Color(preset.hex);
     const fillGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.015, 32);
@@ -304,54 +275,26 @@ export class LevelManager {
       clearcoat: 1.0,
     });
     const fillDisc = new THREE.Mesh(fillGeo, fillMat);
-    fillDisc.position.copy(localPos); // ← dùng localPos đã lưu
+    fillDisc.position.copy(localPos);
 
-    this.colorCircle.remove(slot.mesh); // ← remove sau
+    this.colorCircle.remove(slot.mesh);
     this.colorCircle.add(fillDisc);
 
     this._animateFill(fillDisc, color);
 
     if (this.slots.every((s) => s.filled)) {
-      setTimeout(() => this._onWin(), 1000);
+      this._winDelay = 1.0;
     }
   }
 
   _animateFill(disc, color) {
-    // Scale-in animation
     disc.scale.set(0.1, 0.1, 0.1);
-    const start = performance.now();
-    const animate = () => {
-      const t = Math.min((performance.now() - start) / 400, 1);
-      const ease = 1 - Math.pow(1 - t, 3);
-      disc.scale.set(ease, ease, ease);
-
-      // Pulse emissive
-      disc.material.emissiveIntensity = 0.5 + 0.3 * Math.sin(t * Math.PI);
-
-      if (t < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
+    this._pendingAnimations.push({ disc, color, elapsed: 0, duration: 0.4 });
   }
 
   _onWin() {
     console.log(`Level ${this.currentLevelIndex + 1} complete!`);
-
-    // Celebration animation on the circle
-    if (this.colorCircle) {
-      const start = performance.now();
-      const pulse = () => {
-        const t = (performance.now() - start) / 1500;
-        if (t > 1) {
-          if (this.onLevelComplete) this.onLevelComplete(this.currentLevelIndex);
-          return;
-        }
-        this.colorCircle.scale.setScalar(1 + 0.05 * Math.sin(t * Math.PI * 6));
-        requestAnimationFrame(pulse);
-      };
-      requestAnimationFrame(pulse);
-    } else {
-      if (this.onLevelComplete) this.onLevelComplete(this.currentLevelIndex);
-    }
+    this._winAnim = { elapsed: 0, duration: 1.5 };
   }
 
   nextLevel() {
@@ -365,6 +308,9 @@ export class LevelManager {
       this.colorCircle = null;
     }
     this.slots = [];
+    this._pendingAnimations = [];
+    this._winAnim = null;
+    this._winDelay = null;
   }
 
   getCircleAnchor() {
@@ -376,9 +322,38 @@ export class LevelManager {
   }
 
   update(delta) {
-    // Gentle rotation of color circle
     if (this.colorCircle) {
       this.colorCircle.rotation.y += delta * 0.05;
+    }
+
+    this._pendingAnimations = this._pendingAnimations.filter(anim => {
+      anim.elapsed += delta;
+      const t = Math.min(anim.elapsed / anim.duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      anim.disc.scale.set(ease, ease, ease);
+      anim.disc.material.emissiveIntensity = 0.5 + 0.3 * Math.sin(t * Math.PI);
+      return t < 1;
+    });
+
+    if (this._winDelay !== null) {
+      this._winDelay -= delta;
+      if (this._winDelay <= 0) {
+        this._winDelay = null;
+        this._onWin();
+      }
+    }
+
+    if (this._winAnim) {
+      this._winAnim.elapsed += delta;
+      const t = this._winAnim.elapsed / this._winAnim.duration;
+      if (this.colorCircle) {
+        this.colorCircle.scale.setScalar(1 + 0.05 * Math.sin(t * Math.PI * 6));
+      }
+      if (t >= 1) {
+        this._winAnim = null;
+        if (this.colorCircle) this.colorCircle.scale.setScalar(1);
+        if (this.onLevelComplete) this.onLevelComplete(this.currentLevelIndex);
+      }
     }
   }
 }
