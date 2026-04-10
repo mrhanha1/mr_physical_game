@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 const BUFFER_SIZE  = 4;      // rolling frame buffer để smooth velocity
 const GRAVITY      = -4.0;   // m/s²
-const DAMPING      = 0.92;   // hệ số giảm tốc mỗi frame
+const DAMPING      = 0.97;   // hệ số giảm tốc mỗi frame
 const STOP_THRESH  = 0.02;   // dừng hẳn khi speed < ngưỡng này
 const FLOOR_Y      = 0.05;   // sàn tối thiểu (tránh xuyên sàn)
 

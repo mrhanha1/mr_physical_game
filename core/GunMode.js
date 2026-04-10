@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PhysicsBody } from './PhysicsBody.js';
+import { COLOR_PRESETS } from './SphereGenerator.js';
 
 const BULLET_SPEED   = 8.0;   // m/s
 const AMMO_PLANE_SIZE = 0.06; // kích thước plane indicator đạn
@@ -39,8 +40,8 @@ export class GunMode {
       (gltf) => {
         this._gunModel = gltf.scene;
         // Điều chỉnh vị trí/xoay/scale cho vừa tay cầm - tinh chỉnh nếu cần
-        this._gunModel.scale.setScalar(0.1);
-        this._gunModel.rotation.set(0, Math.PI*0.8, 0);
+        this._gunModel.scale.setScalar(0.05);
+        this._gunModel.rotation.set(Math.PI * 0.25, Math.PI, 0);
         this._gunModel.position.set(0, -0.02, -0.05);
         this._gunModel.visible = false;
         this._rightGrip.add(this._gunModel);
@@ -203,12 +204,14 @@ export class GunMode {
       }
 
       // Xóa nếu rơi quá sàn hoặc đã dừng
-      if (!body.active || body.mesh.position.y < -2) {
+      if (body.mesh.position.y < -2) {
         this.scene.remove(body.mesh);
-        this.sphereGenerator.activeSpheres = this.sphereGenerator.activeSpheres.filter(
-          (s) => s !== body.mesh
-        );
+        this.sphereGenerator.activeSpheres = this.sphereGenerator.activeSpheres.filter(s => s !== body.mesh);
         return false;
+      }
+      if (!body.active) {
+        // Sphere dừng trên sàn → giữ lại, vẫn grabbable
+        return false; // chỉ xóa khỏi physicsBodies, không xóa khỏi scene
       }
 
       return true;
