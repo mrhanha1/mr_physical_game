@@ -6,6 +6,7 @@ Three.js r170 + WebXR + Meta Quest 3
 📁 ROOT
 ├── index.html          Entry point. Load main.js, chứa canvas WebXR.
 ├── main.js             Khởi tạo SceneManager, chọn mode VR/AR, vòng lặp animation.
+│                       Gọi GunMode.updateButtonInput() và GunMode.update(delta) mỗi frame.
 ├── vite.config.js      Cấu hình Vite: HTTPS (basicSsl), host LAN, build esnext.
 ├── package.json        Dependencies: three, vite, plugin-basic-ssl. Scripts: dev/build/preview.
 ├── vercel.json         Deploy config: buildCommand, outputDirectory, rewrites.
@@ -30,18 +31,48 @@ Three.js r170 + WebXR + Meta Quest 3
 │                       Tích hợp PhysicsBody: tính world-space velocity qua
 │                       VelocityTracker (rolling buffer 4 frame) khi đang cầm,
 │                       apply inertia khi thả nếu không snap vào slot.
+│                       Tích hợp GunMode: khi left thả sphere vào right controller
+│                       → gọi GunMode.loadAmmo(hexColor) để nạp đạn.
 │
-├── PhysicsBody.js      Inertia system cho sphere sau khi thả.
+├── PhysicsBody.js      Inertia system cho sphere sau khi thả hoặc bắn.
 │                       PhysicsBody: apply velocity + gravity (-4 m/s²) + damping
 │                       (0.92/frame) + floor clamp (y=0.05) + bounce nhỏ.
 │                       Dừng khi speed < 0.02. Tự xóa khỏi physicsBodies[].
 │                       VelocityTracker: rolling buffer 4 frame world position,
 │                       tính velocity trung bình để tránh spike khi tay giật cục.
 │
-└── AudioManager.js     1 AudioListener gắn camera. 3 PositionalAudio:
+├── AudioManager.js     1 AudioListener gắn camera. 3 PositionalAudio:
 │                         correct.mp3 → phát tại vị trí slot.
 │                         fail.mp3    → phát tại vị trí controller.
 │                         ambient.mp3 → loop, volume thấp, gắn scene center.
+│
+└── GunMode.js          Chế độ bắn sphere bằng súng. Nhận SceneManager,
+                        SphereGenerator, LevelManager.
+                        Toggle bật/tắt bằng nút A (right controller, index 4).
+                        Bật: hiện model súng DEpistol.glb gắn right grip.
+                        Tắt: ẩn súng, xóa đạn đang nạp.
+
+                        Nạp đạn (loadAmmo):
+                          Nhận hexColor từ Interaction khi left thả vào right.
+                          Hiện ammoIndicator (PlaneGeometry 0.06m) đổi màu theo đạn.
+
+                        Bắn (fire):
+                          Trigger right (index 0) → tạo sphere tại vị trí controller.
+                          Bắn theo hướng ngắm với BULLET_SPEED = 8 m/s.
+                          Sphere thêm vào PhysicsBody (có gravity) + activeSpheres.
+                          Haptic pulse intensity 0.6, 80ms khi bắn.
+
+                        Update mỗi frame:
+                          Cập nhật PhysicsBody các sphere đang bay.
+                          Check drop vào slot qua LevelManager.checkDrop():
+                            Đúng màu → fillSlot + haptic 0.8 / 200ms.
+                            Sai màu  → bounce off (reflect + scale 0.4), giữ grabbable.
+                          Xóa sphere nếu y < -2 hoặc đã dừng.
+
+                        Assets:
+                          /assets/DEpistol.glb → model súng (scale 0.5).
+                          ammoIndicator: PlaneGeometry, DoubleSide, opacity 0.85,
+                          gắn right controller tại (0.08, 0, -0.05), xoay π/4.
 
 📁 modes/
 ├── VRMode.js           Virtual room: BoxGeometry 6 mặt, MeshPhongMaterial.
@@ -56,8 +87,9 @@ Three.js r170 + WebXR + Meta Quest 3
                         Sphere spawn quanh vị trí anchor.
 
 📁 assets/
-├── correct.mp3         Âm thanh khi thả sphere đúng vị trí.
-├── fail.mp3            Âm thanh khi thả sphere sai vị trí.
+├── DEpistol.glb        Model súng 3D, gắn vào right grip khi GunMode active.
+├── correct.mp3         Âm thanh khi thả/bắn sphere đúng vị trí.
+├── fail.mp3            Âm thanh khi thả/bắn sphere sai vị trí.
 ├── ambient.mp3         Nhạc nền loop, volume thấp.
 └── README.md           Ghi chú assets.
 
@@ -78,3 +110,15 @@ Bậc 3 - Tertiary (slot trống):
   30°  = Chartreuse   90°  = Spring Green
   150° = Azure        210° = Violet
   270° = Rose         330° = Orange
+
+====================================================
+GUN MODE - LUỒNG HOẠT ĐỘNG
+====================================================
+1. Người chơi nhấn nút A (right) → toggle GunMode bật/tắt.
+2. Dùng left tay cầm sphere → thả vào right controller → loadAmmo(color).
+3. ammoIndicator đổi màu hiển thị đạn đang nạp.
+4. Nhấn trigger right → fire(): sphere bay theo hướng ngắm.
+5. Sphere trúng slot đúng màu → lock + haptic mạnh.
+   Sphere trúng slot sai màu → bounce, vẫn có thể grab lại.
+   Sphere rơi xuống y < -2   → tự xóa khỏi scene.
+====================================================

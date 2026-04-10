@@ -197,15 +197,11 @@ export class Interaction {
     try {
       const session = this.sceneManager.renderer.xr.getSession();
       if (!session) return;
-
-      const inputSources = session.inputSources;
+      const handedness = controllerIndex === 0 ? 'left' : 'right';
       let source = null;
-      let count = 0;
-      for (const s of inputSources) {
-        if (count === controllerIndex) { source = s; break; }
-        count++;
+      for (const s of session.inputSources) {
+        if (s.handedness === handedness) { source = s; break; }
       }
-
       if (source?.gamepad?.hapticActuators?.[0]) {
         source.gamepad.hapticActuators[0].pulse(intensity, durationMs);
       }
@@ -220,7 +216,7 @@ export class Interaction {
       let leftSource = null;
       let count = 0;
       for (const s of session.inputSources) {
-        if (count === 0) { leftSource = s; break; }
+        if (s.handedness === 'left') { leftSource = s; break; }
         count++;
       }
 
