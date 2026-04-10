@@ -39,8 +39,8 @@ export class GunMode {
       (gltf) => {
         this._gunModel = gltf.scene;
         // Điều chỉnh vị trí/xoay/scale cho vừa tay cầm - tinh chỉnh nếu cần
-        this._gunModel.scale.setScalar(0.5);
-        this._gunModel.rotation.set(0, Math.PI*2, 0);
+        this._gunModel.scale.setScalar(0.1);
+        this._gunModel.rotation.set(0, Math.PI*0.8, 0);
         this._gunModel.position.set(0, -0.02, -0.05);
         this._gunModel.visible = false;
         this._rightGrip.add(this._gunModel);
@@ -198,7 +198,7 @@ export class GunMode {
             body.velocity.reflect(new THREE.Vector3(0, 1, 0)).multiplyScalar(0.4);
           }
           body.active = false;
-          return false;
+          //return false;
         }
       }
 

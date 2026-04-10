@@ -183,7 +183,9 @@ export class Interaction {
 
     for (const sphere of spheres) {
       if (sphere.userData.isLocked) continue;
-      const dist = ctrlPos.distanceTo(sphere.position);
+      const sphereWorld = new THREE.Vector3();
+      sphere.getWorldPosition(sphereWorld);
+      const dist = ctrlPos.distanceTo(sphereWorld);
       if (dist < minDist) {
         minDist = dist;
         closest = sphere;
