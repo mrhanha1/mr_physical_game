@@ -6,6 +6,7 @@ const GRAVITY      = -4.0;   // m/s²
 const DAMPING      = 0.97;   // hệ số giảm tốc mỗi frame
 const STOP_THRESH  = 0.02;   // dừng hẳn khi speed < ngưỡng này
 const FLOOR_Y      = 0.05;   // sàn tối thiểu (tránh xuyên sàn)
+const WALL_Z = -3.95; // vị trí z của wall, để clamp sphere không xuyên wall khi bắn mạnh về phía đó
 
 export class PhysicsBody {
   /**
@@ -21,6 +22,11 @@ export class PhysicsBody {
   }
 
   update(delta) {
+    if (this.mesh.position.z < WALL_Z) {
+      this.mesh.position.z = WALL_Z;
+      this.velocity.z *= -0.3;
+    }
+
     if (!this.active) return;
 
     // Gravity - chỉ apply khi useGravity = true

@@ -61,6 +61,7 @@ export class LevelManager {
 
     const group = new THREE.Group();
     group.position.copy(position);
+    group.rotation.x = Math.PI / 2;
     group.name = 'ColorCircle';
 
     const ringGeo = new THREE.TorusGeometry(this.circleRadius + 0.04, 0.015, 16, 100);

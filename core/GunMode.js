@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PhysicsBody } from './PhysicsBody.js';
 import { COLOR_PRESETS } from './SphereGenerator.js';
 
-const BULLET_SPEED   = 8.0;   // m/s
+const BULLET_SPEED   = 16.0;   // m/s
 const AMMO_PLANE_SIZE = 0.06; // kích thước plane indicator đạn
 
 export class GunMode {
@@ -41,7 +41,7 @@ export class GunMode {
         this._gunModel = gltf.scene;
         // Điều chỉnh vị trí/xoay/scale cho vừa tay cầm - tinh chỉnh nếu cần
         this._gunModel.scale.setScalar(0.05);
-        this._gunModel.rotation.set(Math.PI * 0.25, Math.PI, 0);
+        this._gunModel.rotation.set(-Math.PI * 0.2, Math.PI, 0);
         this._gunModel.position.set(0, -0.02, -0.05);
         this._gunModel.visible = false;
         this._rightGrip.add(this._gunModel);

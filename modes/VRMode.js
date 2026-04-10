@@ -68,6 +68,17 @@ export class VRMode {
     floor.receiveShadow = true;
     room.add(floor);
 
+    // Back wall (để đặt color wheel lên)
+    const wallGeo = new THREE.PlaneGeometry(roomW, roomH);
+    const wallMat = new THREE.MeshPhysicalMaterial({ color: 0x1a1a2e, roughness: 0.8 });
+    const wall = new THREE.Mesh(wallGeo, wallMat);
+    wall.position.set(0, 0, -roomD / 2 + 0.01); // sát tường back
+    wall.receiveShadow = true;
+    room.add(wall);
+
+    // Lưu wall anchor để LevelManager dùng
+    this.wallAnchor = new THREE.Vector3(0, roomH / 2, -roomD / 2 + 0.05);
+    
     // Accent strip lights near ceiling
     this._addAccentLights(room, roomW, roomH, roomD);
 

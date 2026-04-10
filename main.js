@@ -52,7 +52,7 @@ sceneManager.onXRSessionStart(() => {
     vrMode.enter();
     ui.setMode('vr');
 
-    const anchor = new THREE.Vector3(0, 0, -1.5);
+    const anchor = vrMode.wallAnchor;
     levelManager.buildColorCircle(anchor);
     const colorIndices = levelManager.getActiveSlotColorIndices();
     sphereGen.spawnForLevel(anchor, colorIndices, {
