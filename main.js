@@ -8,6 +8,7 @@ import { AudioManager } from './core/AudioManager.js';
 import { GunMode } from './core/GunMode.js';
 import { VRMode } from './modes/VRMode.js';
 import { ARMode } from './modes/ARMode.js';
+import { PCMode } from './modes/PCMode.js';
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
@@ -26,7 +27,41 @@ const gunMode       = new GunMode(sceneManager, sphereGen, levelManager);
 interaction.setGunMode(gunMode);
 
 // ─── Modes ───────────────────────────────────────────────────────────────────
+// PC Mode
+let pcMode = null;
+const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch(() => false);
 
+function activatePCMode() {
+  if (pcMode) return;
+  sceneManager.enablePCMode();
+  pcMode = new PCMode(sceneManager, sphereGen, levelManager, audioManager, gunMode);
+
+  const anchorPos = new THREE.Vector3(0, 1.2, -2);
+  levelManager.buildColorCircle(anchorPos);
+  const colorIndices = levelManager.getActiveSlotColorIndices();
+  sphereGen.spawnForLevel(anchorPos, colorIndices, { radius: 1.0, heightRange: [0.8, 1.6] });
+
+  document.getElementById('PCButton')?.remove();
+  document.getElementById('instructions').innerHTML = `
+    <h2>PC Controls</h2>
+    <p>
+      <span class="key">Click</span> canvas để bắt đầu · <span class="key">ESC</span> để thoát con trỏ<br/><br/>
+      🖱 <span class="key">Chuột</span> nhìn xung quanh<br/>
+      ⌨️ <span class="key">W A S D</span> di chuyển · <span class="key">Space</span> lên · <span class="key">C</span> xuống<br/>
+      🖱 <span class="key">Click trái</span> tay trái grab · <span class="key">Click phải</span> tay phải grab<br/>
+      🔫 <span class="key">Q</span> toggle Gun Mode · <span class="key">Click trái</span> bắn
+    </p>`;
+}
+
+// Tự động bật nếu không có XR
+if (!xrSupported) activatePCMode();
+
+// Nút bấm thủ công
+document.getElementById('PCButton')?.addEventListener('click', activatePCMode);
+if (xrSupported) document.getElementById('PCButton').style.display = 'block';
+else document.getElementById('PCButton').style.display = 'none';
+
+//---- VR/AR Modes
 const vrMode = new VRMode(sceneManager);
 const arMode = new ARMode(sceneManager, levelManager, sphereGen);
 
@@ -129,9 +164,15 @@ sceneManager.setAnimationLoop((timestamp, frame) => {
     gunMode.update(delta);
   }
 
+  // PC Mode update
+  if (pcMode) {
+    pcMode.update(delta);
+    gunMode.update(delta);
+  }
+
   levelManager.update(delta);
 
-  if (!activeMode) {
+  if (!activeMode && !pcMode) {
     const t = timestamp * 0.0003;
     camera.position.x = Math.sin(t) * 3;
     camera.position.z = Math.cos(t) * 3;
@@ -204,8 +245,8 @@ function buildUI() {
 })();
 
 // ─── Desktop mouse drag (flat-screen fallback) ────────────────────────────────
-
-(function setupDesktopDrag() {
+// Chỉ active khi không có PC mode (không có XR và không có PCMode)
+if (!pcMode) {
   const canvas = sceneManager.renderer.domElement;
   let isDragging = false;
   let lastMouse = { x: 0, y: 0 };
@@ -222,4 +263,4 @@ function buildUI() {
     camera.position.z = Math.cos(clock.getElapsedTime() * 0.3 + dx) * 3;
     lastMouse = { x: e.clientX, y: e.clientY };
   });
-})();
+}

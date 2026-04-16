@@ -212,7 +212,7 @@
         backdrop-filter: blur(8px) !important;
       }
       #VRButton {
-        left: calc(50% - 120px) !important;
+        left: calc(50% - 200px) !important;
         transform: translateX(-50%) !important;
         background: rgba(124,58,237,0.25) !important;
         border-color: rgba(124,58,237,0.6) !important;
@@ -224,7 +224,7 @@
         box-shadow: 0 0 30px rgba(124,58,237,0.5) !important;
       }
       #ARButton {
-        left: calc(50% + 120px) !important;
+        left: calc(50% + 200px) !important;
         transform: translateX(-50%) !important;
         background: rgba(5,150,105,0.25) !important;
         border-color: rgba(5,150,105,0.6) !important;
@@ -234,6 +234,32 @@
       #ARButton:hover {
         background: rgba(5,150,105,0.45) !important;
         box-shadow: 0 0 30px rgba(5,150,105,0.5) !important;
+      }
+
+
+      #PCButton {
+        position: fixed !important;
+        bottom: 28px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 100 !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.05em !important;
+        border-radius: 999px !important;
+        padding: 12px 32px !important;
+        border: 1px solid rgba(14,165,233,0.6) !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        backdrop-filter: blur(8px) !important;
+        background: rgba(14,165,233,0.25) !important;
+        color: #7dd3fc !important;
+        box-shadow: 0 0 20px rgba(14,165,233,0.3) !important;
+      }
+      #PCButton:hover {
+        background: rgba(14,165,233,0.45) !important;
+        box-shadow: 0 0 30px rgba(14,165,233,0.5) !important;
       }
 
       /* ── Animated background gradient ──────────────────────────────── */
@@ -373,6 +399,8 @@
     <!-- Level complete banner -->
     <div id="level-banner">✨ Level Complete!</div>
 
+    <button id="PCButton">🖥 Play on PC</button>
+    
     <!-- Three.js ES Module -->
     <script type="importmap">
       {

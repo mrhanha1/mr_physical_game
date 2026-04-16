@@ -233,4 +233,49 @@ export class GunMode {
       }
     } catch (e) {}
   }
+
+  /** Toggle dùng cho PC mode — gắn súng vào rightHand object3D */
+  togglePCMode(camera, rightHand) {
+    this.isActive = !this.isActive;
+    if (this._gunModel) {
+      // Dùng removeFromParent() để tháo đúng parent bất kể là XR grip hay PC hand
+      this._gunModel.removeFromParent();
+      if (this.isActive) rightHand.add(this._gunModel);
+      this._gunModel.visible = this.isActive;
+    }
+    if (!this.isActive) {
+      this.ammoColor = null;
+      this._ammoIndicator.visible = false;
+    }
+  }
+
+  /** Bắn theo hướng camera (PC mode) */
+  firePCMode(camera) {
+    if (!this.ammoColor) return;
+
+    const geo = new THREE.SphereGeometry(0.04, 16, 16);
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: this.ammoColor, emissive: this.ammoColor,
+      emissiveIntensity: 0.4, roughness: 0.3, metalness: 0.1,
+    });
+    const sphere = new THREE.Mesh(geo, mat);
+    sphere.userData.color     = this.ammoColor;
+    sphere.userData.isLocked  = false;
+    sphere.userData.isGrabbed = false;
+
+    const startPos = new THREE.Vector3();
+    camera.getWorldPosition(startPos);
+    sphere.position.copy(startPos);
+    this.scene.add(sphere);
+
+    const dir = new THREE.Vector3(0, 0, -1)
+      .applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()))
+      .normalize();
+
+    this.physicsBodies.push(new PhysicsBody(sphere, dir.multiplyScalar(BULLET_SPEED), true));
+    this.sphereGenerator.activeSpheres.push(sphere);
+
+    this.ammoColor = null;
+    this._ammoIndicator.visible = false;
+  }
 }

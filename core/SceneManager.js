@@ -42,6 +42,7 @@ export class SceneManager {
     this.currentMode = null; // 'vr' | 'ar'
     this._vrButton = null;
     this._arButton = null;
+    this.isPCMode = false;
 
     // Resize handler
     window.addEventListener('resize', () => this._onResize());
@@ -172,5 +173,10 @@ export class SceneManager {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  enablePCMode() {
+    this.isPCMode = true;
+    this.renderer.xr.enabled = false;
   }
 }

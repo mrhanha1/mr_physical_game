@@ -77,8 +77,8 @@ export class VRMode {
     room.add(wall);
 
     // Lưu wall anchor để LevelManager dùng
-    this.wallAnchor = new THREE.Vector3(0, roomH / 2, -roomD / 2 + 0.05);
-    
+    this.wallAnchor = new THREE.Vector3(0, 2, -3.95); //(0, roomH / 2, -roomD / 2 + 0.05);
+
     // Accent strip lights near ceiling
     this._addAccentLights(room, roomW, roomH, roomD);
 
