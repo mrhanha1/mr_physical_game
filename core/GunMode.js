@@ -42,7 +42,7 @@ export class GunMode {
       (gltf) => {
         this._gunModel = gltf.scene;
         this._gunModel.scale.setScalar(0.05);
-        this._gunModel.rotation.set(-Math.PI * 0.2, Math.PI, 0);
+        this._gunModel.rotation.set(-Math.PI * 0.25, Math.PI*0.9, 0);
         this._gunModel.position.set(0, -0.02, -0.05);
         this._gunModel.visible = false;
         this._rightGrip.add(this._gunModel);
