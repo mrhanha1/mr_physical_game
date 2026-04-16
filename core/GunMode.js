@@ -42,7 +42,7 @@ export class GunMode {
       (gltf) => {
         this._gunModel = gltf.scene;
         this._gunModel.scale.setScalar(0.05);
-        this._gunModel.rotation.set(-Math.PI * 0.2, Math.PI, 0);
+        this._gunModel.rotation.set(-Math.PI * 0.5, Math.PI, 0);
         this._gunModel.position.set(0, -0.02, -0.05);
         this._gunModel.visible = false;
         this._rightGrip.add(this._gunModel);
@@ -105,6 +105,7 @@ export class GunMode {
    */
   loadAmmo(hexColor) {
     this.ammoColor = hexColor;
+    this._ammoColorIndex = colorIndex;
     this._ammoIndicator.material.color.set(hexColor);
     this._ammoIndicator.visible = true;
   }
@@ -129,6 +130,7 @@ export class GunMode {
     });
     const sphere = new THREE.Mesh(geo, mat);
     sphere.userData.color     = this.ammoColor;
+    sphere.userData.colorIndex = this._ammoColorIndex;
     sphere.userData.isLocked  = false;
     sphere.userData.isGrabbed = false;
 
@@ -227,7 +229,7 @@ export class GunMode {
       }
       return body.active;
 
-      return true;
+      //return true;
     });
   }
 
