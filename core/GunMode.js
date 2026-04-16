@@ -103,8 +103,9 @@ export class GunMode {
    * Nạp đạn từ sphere (gọi từ GrabSystem khi left thả vào right).
    * @param {string} hexColor
    */
-  loadAmmo(hexColor) {
+  loadAmmo(hexColor, colorIndex) {
     this.ammoColor = hexColor;
+    this._ammoColorIndex = colorIndex;
     this._ammoIndicator.material.color.set(hexColor);
     this._ammoIndicator.visible = true;
   }
@@ -129,6 +130,7 @@ export class GunMode {
     });
     const sphere = new THREE.Mesh(geo, mat);
     sphere.userData.color     = this.ammoColor;
+    sphere.userData.colorIndex = this._ammoColorIndex;
     sphere.userData.isLocked  = false;
     sphere.userData.isGrabbed = false;
 
@@ -226,8 +228,6 @@ export class GunMode {
         return false;
       }
       return body.active;
-
-      return true;
     });
   }
 

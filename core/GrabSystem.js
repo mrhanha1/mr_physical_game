@@ -107,7 +107,7 @@ export class GrabSystem {
       sphere.getWorldPosition(this._worldPos);
 
       if (this._worldPos.distanceTo(rightWorld) < 0.3) {
-        this.gunMode.loadAmmo(sphere.userData.color);
+        this.gunMode.loadAmmo(sphere.userData.color, sphere.userData.colorIndex);
         this.scene.remove(sphere);
         this.sphereGenerator.activeSpheres =
           this.sphereGenerator.activeSpheres.filter(s => s !== sphere);
