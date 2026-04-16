@@ -63,7 +63,7 @@ export class SceneManager {
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
-    dirLight.shadow.camera.near = 0.1;
+    dirLight.shadow.camera.near = 0.01;
     dirLight.shadow.camera.far = 30;
     dirLight.shadow.camera.left = -10;
     dirLight.shadow.camera.right = 10;
@@ -78,6 +78,7 @@ export class SceneManager {
   }
 
   _setupControllers() {
+    this.scene.add(this.camera);
     const factory = new XRControllerModelFactory();
 
     for (let i = 0; i < 2; i++) {

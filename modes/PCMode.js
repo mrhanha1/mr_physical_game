@@ -45,15 +45,21 @@ export class PCMode {
   // ─── Visual ───────────────────────────────────────────────────────────────
 
   _buildHandVisuals() {
-    const geo  = new THREE.SphereGeometry(0.04, 10, 10);
+    // const geo  = new THREE.SphereGeometry(0.04, 10, 10);
 
-    const matL = new THREE.MeshPhysicalMaterial({ color: 0x88aaff, roughness: 0.4, metalness: 0.2 });
-    this._leftMesh = new THREE.Mesh(geo, matL);
-    this.leftHand.add(this._leftMesh);
+    // const matL = new THREE.MeshPhysicalMaterial({ color: 0x88aaff, roughness: 0.4, metalness: 0.2 });
+    // this._leftMesh = new THREE.Mesh(geo, matL);
+    // this.leftHand.add(this._leftMesh);
 
-    const matR = new THREE.MeshPhysicalMaterial({ color: 0xff8844, roughness: 0.4, metalness: 0.2 });
-    this._rightMesh = new THREE.Mesh(geo, matR);
-    this.rightHand.add(this._rightMesh);
+    // const matR = new THREE.MeshPhysicalMaterial({ color: 0xff8844, roughness: 0.4, metalness: 0.2 });
+    // this._rightMesh = new THREE.Mesh(geo, matR);
+    // this.rightHand.add(this._rightMesh);
+    const geo = new THREE.BoxGeometry(0.05, 0.05, 0.1);
+    for (const [hand, color] of [[this.leftHand, 0x88aaff], [this.rightHand, 0xff8844]]) {
+      const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
+      mesh.frustumCulled = false;
+      hand.add(mesh);
+    }
   }
 
   _buildCrosshair() {

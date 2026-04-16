@@ -41,7 +41,9 @@ let pcMode = null;
 const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch(() => false);
 
 function activatePCMode() {
+  
   if (pcMode) return;
+  sceneManager.scene.fog = null;
   sceneManager.enablePCMode();
 
   // Dùng cùng anchor logic như VR (build room trước để lấy wallAnchor)
