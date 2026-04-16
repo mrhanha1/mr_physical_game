@@ -11,9 +11,9 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 ├── main.js             Khởi tạo SceneManager, chọn mode VR/AR/PC, vòng lặp animation.
 │                       Gọi GunMode.updateButtonInput() và GunMode.update(delta) mỗi frame
 │                       khi ở VR/AR. Gọi pcMode.update(delta) và gunMode.update(delta)
-│                       khi ở PC mode. grabSystem.update(delta) chạy ở mọi mode.
+│                       khi ở PC mode.
 │                       activatePCMode(): gọi vrMode.enter() để build room, tạo PCMode,
-│                       build ColorCircle tại vrMode.wallAnchor, spawn spheres.
+│                       build ColorCircle tại Vector3(0,1.2,-2), spawn spheres.
 │                       Render loop guard: camera auto-orbit chỉ chạy khi
 │                       !activeMode && !pcMode.
 ├── vite.config.js      Cấu hình Vite: HTTPS (basicSsl), host LAN, build esnext.
@@ -27,51 +27,24 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                       Thêm: isPCMode flag + enablePCMode() tắt renderer.xr.enabled.
 │
 ├── SphereGenerator.js  Array 12 màu HSL preset (bước 30°). Spawn sphere random
-│                       position mỗi level.
-│                       userData.color lưu hex HSL.
-│                       userData.colorIndex lưu index (0–11) tương ứng COLOR_PRESETS.
-│                       Cả hai field bắt buộc để checkDrop() hoạt động đúng.
+│                       position mỗi level. userData.color lưu hex HSL.
 │
 ├── LevelManager.js     Mỗi level = 1 ColorCircle (Group, 12 slot trên vòng tròn).
 │                       3 slot primary (0°/120°/240°) tô màu sẵn, không tương tác.
-│                       9 slot còn lại rỗng, userData.expectedColorIndex.
-│                       Win condition: tất cả slot active filled đúng → next level.
+│                       9 slot còn lại rỗng, userData.expectedColor.
+│                       Win condition: 9 slot filled đúng → next level.
 │                       buildColorCircle() nhận THREE.Vector3 (không nhận Object3D).
-│                       checkDrop(): so sánh sphere.userData.colorIndex với
-│                         slot.expectedColorIndex — dùng index số, không dùng hex string.
-│                       fillSlot(): set slot.filled=true, sphere.visible=false,
-│                         thêm fillDisc vào colorCircle, kích hoạt animation + win check.
 │
-├── GrabSystem.js       Shared grab/drop/physics logic cho cả VR và PC mode.
-│                       Thay thế Interaction.js cũ — dùng chung 1 class cho mọi mode.
-│
-│                       grabSphere(handIndex, handObject):
-│                         Tìm sphere gần nhất trong activeSpheres (GRAB_RADIUS=0.25m).
-│                         Skip nếu isLocked hoặc isGrabbed. Attach vào handObject.
-│                         Right hand không grab khi gunMode.isActive.
-│
-│                       releaseSphere(handIndex, handObject, otherHandObject):
-│                         Tính velocity qua VelocityTracker.
-│                         Left thả gần right + gun active → loadAmmo(color, colorIndex).
-│                         Truyền cả hex và colorIndex vào GunMode.loadAmmo().
-│                         Drop bình thường → checkDrop → _onCorrectDrop / _onWrongDrop.
-│
-│                       handOffToPhysics(sphere, velocity):
-│                         Public method. GunMode gọi khi sphere bắn sai màu để
-│                         chuyển giao sphere về GrabSystem physics pipeline.
-│                         Sphere tiếp tục được simulate, checkDrop, và grabbable lại.
-│
-│                       _onCorrectDrop(sphere, slot):
-│                         playCorrect() + fillSlot() + xóa khỏi activeSpheres.
-│
-│                       _onWrongDrop(sphere):
-│                         playFail() + _rejectSphere() (animation đẩy ra).
-│                         Sphere vẫn trong activeSpheres, grabbable lại bình thường.
-│
-│                       update(delta):
-│                         Track velocity sphere đang cầm.
-│                         Simulate physicsBodies: checkDrop mỗi frame,
-│                         xóa sphere rơi y < -2 khỏi scene + activeSpheres.
+├── Interaction.js      Grab/drop cho XR controllers (VR/AR mode).
+│                       onDrop: check distance < threshold + color match.
+│                       Đúng → lock sphere vào slot + AudioManager.playCorrect().
+│                       Sai  → AudioManager.playFail() + haptic pulse controller.
+│                       Tích hợp PhysicsBody: tính world-space velocity qua
+│                       VelocityTracker (rolling buffer 4 frame) khi đang cầm,
+│                       apply inertia khi thả nếu không snap vào slot.
+│                       Tích hợp GunMode: khi left thả sphere vào right controller
+│                       → gọi GunMode.loadAmmo(hexColor) để nạp đạn.
+│                       _hapticPulse: guard if (controller.gamepad) tránh crash PC.
 │
 ├── PhysicsBody.js      Inertia system cho sphere sau khi thả hoặc bắn.
 │                       PhysicsBody: apply velocity + gravity (-4 m/s²) + damping
@@ -80,46 +53,40 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                       VelocityTracker: rolling buffer 4 frame world position,
 │                       tính velocity trung bình để tránh spike khi tay giật cục.
 │
-├── VRInput.js          Wrapper XR controller events → gọi GrabSystem.grabSphere/
-│                       releaseSphere với controller Object3D tương ứng.
-│                       Tách biệt input layer khỏi logic grab/drop.
-│
 ├── AudioManager.js     1 AudioListener gắn camera. 3 PositionalAudio:
 │                         correct.mp3 → phát tại vị trí slot.
-│                         fail.mp3    → phát tại vị trí sphere.
+│                         fail.mp3    → phát tại vị trí controller.
 │                         ambient.mp3 → loop, volume thấp, gắn scene center.
 │
 └── GunMode.js          Chế độ bắn sphere bằng súng. Nhận SceneManager,
-                        SphereGenerator, LevelManager, GrabSystem.
+                        SphereGenerator, LevelManager.
 
                         VR/AR toggle: nút A (right controller, index 4).
-                        PC toggle: gọi toggle({ attachTo: rightHand }).
+                        PC toggle: gọi togglePCMode(camera, rightHand).
                         Bật: hiện model súng DEpistol.glb.
                           VR: gắn vào right grip.
                           PC: gắn vào rightHand Object3D.
                         Tắt: ẩn súng, xóa đạn đang nạp.
 
-                        Nạp đạn (loadAmmo(hexColor, colorIndex)):
-                          Nhận hexColor + colorIndex từ GrabSystem khi left thả
-                          sphere gần right hand. Lưu cả _ammoColor và _ammoColorIndex.
+                        Nạp đạn (loadAmmo):
+                          Nhận hexColor từ Interaction (VR) hoặc PCMode (PC)
+                          khi left thả sphere gần right.
                           Hiện ammoIndicator (PlaneGeometry 0.06m) đổi màu theo đạn.
 
-                        Bắn (fire(originObject)):
-                          Tạo sphere tại world position của originObject.
-                          sphere.userData.color = hex, userData.colorIndex = index.
-                          BULLET_SPEED = 16 m/s theo hướng ngắm originObject.
-                          VR: originObject = right controller.
-                          PC: originObject = camera.
+                        Bắn VR (fire):
+                          Trigger right (index 0) → tạo sphere tại vị trí right controller.
+                          Bắn theo hướng ngắm right controller, BULLET_SPEED = 16 m/s.
+
+                        Bắn PC (firePCMode(camera)):
+                          Tạo sphere tại vị trí camera.
+                          Bắn theo hướng ngắm camera (forward -Z world space).
 
                         Update mỗi frame:
-                          Simulate PhysicsBody các sphere đang bay.
+                          Cập nhật PhysicsBody các sphere đang bay.
                           Check drop vào slot qua LevelManager.checkDrop():
-                            Đúng màu → fillSlot + scene.remove(sphere) +
-                                        xóa activeSpheres + haptic 0.8/200ms.
-                            Sai màu  → tính bounceVel (reflect + 0.4) →
-                                        grabSystem.handOffToPhysics(sphere, bounceVel).
-                                        GrabSystem tiếp quản: simulate tiếp, grabbable lại.
-                          Xóa sphere nếu y < -2 (rơi khỏi scene).
+                            Đúng màu → fillSlot + haptic 0.8 / 200ms (VR only).
+                            Sai màu  → bounce off (reflect + scale 0.4), giữ grabbable.
+                          Xóa sphere nếu y < -2 hoặc đã dừng.
 
                         Assets:
                           /assets/DEpistol.glb → model súng (scale 0.05).
@@ -130,7 +97,8 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 ├── VRMode.js           Virtual room: BoxGeometry 6 mặt, MeshPhongMaterial.
 │                       Accent strip lights + star field particles.
 │                       wallAnchor: Vector3(0, 2, -3.95) để đặt ColorCircle.
-│                       Left joystick: locomotion qua VRInput / GrabSystem.updateLocomotion.
+│                       Left joystick: gamepad.axes[0,1] → translate camera.
+│                       Right controller: grab/drop qua Interaction.js.
 │                       Dùng XRControllerModelFactory render model tay cầm.
 │                       enter()/exit() public — PC mode gọi enter() để dùng room.
 │
@@ -147,6 +115,7 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
                         Camera/Look:
                           Pointer Lock API (click canvas để lock, ESC để thoát).
                           mousemove → cập nhật _yaw / _pitch (giới hạn pitch ±π/2.2).
+                          Khởi tạo _yaw/_pitch từ quaternion camera hiện tại.
                           Camera rotation chỉ apply khi _isLocked = true.
 
                         Movement:
@@ -156,14 +125,19 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
                         Virtual hands:
                           leftHand, rightHand: Object3D gắn vào camera.
                           Offset cố định: L(-0.18, -0.18, -0.5) R(0.18, -0.18, -0.5).
-                          Visual: BoxGeometry nhỏ, màu xanh (left) / cam (right).
+                          Visual: SphereGeometry nhỏ, màu xanh (left) / cam (right).
+                          Vị trí tự cập nhật theo camera mỗi frame.
 
                         Input mapping:
-                          Click trái  → leftHand grab (GrabSystem) / fire() khi gun active.
-                          Click phải  → rightHand grab (GrabSystem).
-                          Q           → toggle GunMode({ attachTo: rightHand }).
-                          Left thả gần rightHand + gun active → GrabSystem.releaseSphere
-                                        tự detect và gọi loadAmmo(color, colorIndex).
+                          Click trái  → leftHand grab sphere / fire() khi gun active.
+                          Click phải  → rightHand grab sphere.
+                          Q           → toggle GunMode (gọi togglePCMode).
+                          Left thả gần rightHand + gun active → loadAmmo.
+
+                        Grab/Drop:
+                          GRAB_RADIUS = 0.25m. Tìm sphere gần nhất trong activeSpheres.
+                          Drop: checkDrop → fillSlot hoặc PhysicsBody bounce.
+                          VelocityTracker ghi world position mỗi frame khi đang cầm.
 
                         Crosshair:
                           SVG crosshair inject vào DOM (#pc-crosshair).
@@ -182,43 +156,37 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 COLOR SYSTEM
 ====================================================
 Bậc 1 - Primary (slot có màu sẵn):
-  index 0  = Red     #FF0000  (0°)
-  index 4  = Green   #00FF00  (120°)
-  index 8  = Blue    #0000FF  (240°)
+  0°   = Red     #FF0000
+  120° = Green   #00FF00
+  240° = Blue    #0000FF
 
 Bậc 2 - Secondary (slot trống):
-  index 2  = Yellow    #FFFF00  (60°)
-  index 6  = Cyan      #00FFFF  (180°)
-  index 10 = Magenta   #FF00FF  (300°)
+  60°  = Yellow    #FFFF00
+  180° = Cyan      #00FFFF
+  300° = Magenta   #FF00FF
 
 Bậc 3 - Tertiary (slot trống):
-  index 1  = Orange        (30°)   index 3  = Chartreuse   (90°)
-  index 5  = Spring Green  (150°)  index 7  = Azure        (210°)
-  index 9  = Violet        (270°)  index 11 = Rose         (330°)
-
-QUAN TRỌNG: checkDrop() so sánh sphere.userData.colorIndex (số nguyên 0–11)
-với slot.expectedColorIndex. Mọi nơi tạo sphere (SphereGenerator, GunMode.fire())
-phải set userData.colorIndex đúng. Không dùng hex string để match màu.
+  30°  = Orange       90°  = Chartreuse
+  150° = Spring Green 210° = Azure
+  270° = Violet       330° = Rose
 
 ====================================================
 GUN MODE - LUỒNG HOẠT ĐỘNG
 ====================================================
 VR/AR:
 1. Nhấn nút A (right controller) → toggle GunMode.
-2. Left tay cầm sphere → thả vào right controller → GrabSystem detect →
-   loadAmmo(hexColor, colorIndex).
+2. Left tay cầm sphere → thả vào right controller → loadAmmo(color).
 3. ammoIndicator đổi màu hiển thị đạn đang nạp.
-4. Nhấn trigger right → fire(rightController): sphere bay theo hướng right controller.
-5. Sphere trúng slot đúng màu → fillSlot + scene.remove + haptic mạnh.
-   Sphere trúng slot sai màu → handOffToPhysics → GrabSystem tiếp quản →
-                                _onWrongDrop → rejectAnim → grabbable lại.
+4. Nhấn trigger right → fire(): sphere bay theo hướng right controller.
+5. Sphere trúng slot đúng màu → lock + haptic mạnh.
+   Sphere trúng slot sai màu → bounce, vẫn có thể grab lại.
    Sphere rơi xuống y < -2   → tự xóa khỏi scene.
 
 PC:
-1. Nhấn Q → toggle GunMode({ attachTo: rightHand }).
-2. Click trái cầm sphere → thả gần rightHand → loadAmmo(color, colorIndex).
+1. Nhấn Q → togglePCMode(camera, rightHand).
+2. Click trái cầm sphere → thả gần rightHand → loadAmmo(color).
 3. ammoIndicator đổi màu.
-4. Click trái → fire(camera): sphere bay theo hướng nhìn camera.
+4. Click trái → firePCMode(camera): sphere bay theo hướng nhìn camera.
 5. Kết quả trúng/trượt giống VR, không có haptic.
 
 ====================================================
