@@ -34,6 +34,9 @@ const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch
 function activatePCMode() {
   if (pcMode) return;
   sceneManager.enablePCMode();
+  
+  camera.position.set(0, 1.2, 0);
+
   pcMode = new PCMode(sceneManager, sphereGen, levelManager, audioManager, gunMode);
 
   const anchorPos = new THREE.Vector3(0, 1.2, -2);
@@ -243,24 +246,3 @@ function buildUI() {
   uiRef.setMode('desktop');
   uiRef.updateLevel(1, levelManager.getLevelCount());
 })();
-
-// ─── Desktop mouse drag (flat-screen fallback) ────────────────────────────────
-// Chỉ active khi không có PC mode (không có XR và không có PCMode)
-if (!pcMode) {
-  const canvas = sceneManager.renderer.domElement;
-  let isDragging = false;
-  let lastMouse = { x: 0, y: 0 };
-
-  canvas.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    lastMouse = { x: e.clientX, y: e.clientY };
-  });
-  canvas.addEventListener('mouseup', () => { isDragging = false; });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!isDragging || activeMode) return;
-    const dx = (e.clientX - lastMouse.x) * 0.005;
-    camera.position.x = Math.sin(clock.getElapsedTime() * 0.3 + dx) * 3;
-    camera.position.z = Math.cos(clock.getElapsedTime() * 0.3 + dx) * 3;
-    lastMouse = { x: e.clientX, y: e.clientY };
-  });
-}

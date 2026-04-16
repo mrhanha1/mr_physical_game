@@ -236,6 +236,10 @@ export class GunMode {
 
   /** Toggle dùng cho PC mode — gắn súng vào rightHand object3D */
   togglePCMode(camera, rightHand) {
+    if (!this._gunModel) {
+      console.warn('[GunMode] model chưa load, thử lại sau');
+      return;
+    }
     this.isActive = !this.isActive;
     if (this._gunModel) {
       // Dùng removeFromParent() để tháo đúng parent bất kể là XR grip hay PC hand
