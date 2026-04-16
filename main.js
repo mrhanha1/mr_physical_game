@@ -38,7 +38,7 @@ const arMode = new ARMode(sceneManager, levelManager, sphereGen);
 
 // PC Mode
 let pcMode = null;
-const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch(() => false);
+//const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch(() => false);
 
 function activatePCMode() {
   
@@ -71,13 +71,23 @@ function activatePCMode() {
 }
 
 // Tự động bật nếu không có XR
-if (!xrSupported) activatePCMode();
+// if (!xrSupported) activatePCMode();
 
-// Nút bấm thủ công
+// // Nút bấm thủ công
+// document.getElementById('PCButton')?.addEventListener('click', activatePCMode);
+// if (xrSupported) document.getElementById('PCButton').style.display = 'block';
+// else document.getElementById('PCButton').style.display = 'none';
+
 document.getElementById('PCButton')?.addEventListener('click', activatePCMode);
-if (xrSupported) document.getElementById('PCButton').style.display = 'block';
-else document.getElementById('PCButton').style.display = 'none';
 
+navigator.xr?.isSessionSupported('immersive-vr')
+  .then(supported => {
+    document.getElementById('PCButton').style.display = supported ? 'block' : 'none';
+    if (!supported) activatePCMode();
+  })
+  .catch(() => {
+    activatePCMode();
+  });
 // ─── Session Lifecycle ───────────────────────────────────────────────────────
 
 let activeMode = null; // 'vr' | 'ar' | null
