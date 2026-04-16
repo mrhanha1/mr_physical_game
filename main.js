@@ -25,7 +25,7 @@ const levelManager = new LevelManager(scene, audioManager);
 
 // Shared game-logic layer
 const grabSystem = new GrabSystem(sceneManager, levelManager, audioManager, sphereGen);
-const gunMode    = new GunMode(sceneManager, sphereGen, levelManager);
+const gunMode = new GunMode(sceneManager, sphereGen, levelManager, grabSystem);
 grabSystem.setGunMode(gunMode);
 
 // VR input layer (XR controller events)

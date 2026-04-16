@@ -171,6 +171,10 @@ export class GrabSystem {
     requestAnimationFrame(anim);
   }
 
+  handOffToPhysics(sphere, velocity) {
+    this.physicsBodies.push(new PhysicsBody(sphere, velocity));
+  }
+
   // ─── Update ───────────────────────────────────────────────────────────────
 
   /**

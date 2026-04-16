@@ -7,11 +7,12 @@ const BULLET_SPEED    = 16.0;   // m/s
 const AMMO_PLANE_SIZE = 0.06;   // kích thước plane indicator đạn
 
 export class GunMode {
-  constructor(sceneManager, sphereGenerator, levelManager) {
+  constructor(sceneManager, sphereGenerator, levelManager, grabSystem) {
     this.sceneManager    = sceneManager;
     this.scene           = sceneManager.scene;
     this.sphereGenerator = sphereGenerator;
     this.levelManager    = levelManager;
+    this.grabSystem      = grabSystem;
 
     this.isActive  = false;
     this.ammoColor = null;   // hex string màu đạn, null = chưa nạp
@@ -203,17 +204,18 @@ export class GunMode {
         const result = this.levelManager.checkDrop(body.mesh, worldPos);
         if (result) {
           if (result.colorMatch) {
-            const slotPos = new THREE.Vector3();
-            result.slot.mesh.getWorldPosition(slotPos);
             this.levelManager.fillSlot(result.slot, body.mesh);
+            this.scene.remove(body.mesh);
             this.sphereGenerator.activeSpheres =
               this.sphereGenerator.activeSpheres.filter(s => s !== body.mesh);
             this._hapticPulse(1, 0.8, 200);
           } else {
-            // Sai màu → bounce
-            body.velocity.reflect(new THREE.Vector3(0, 1, 0)).multiplyScalar(0.4);
+            const bounceVel = body.velocity.clone()
+              .reflect(new THREE.Vector3(0, 1, 0))
+              .multiplyScalar(0.4);
+            this.grabSystem.handOffToPhysics(body.mesh, bounceVel);
           }
-          body.active = false;
+          return false;
         }
       }
 
@@ -223,8 +225,7 @@ export class GunMode {
           this.sphereGenerator.activeSpheres.filter(s => s !== body.mesh);
         return false;
       }
-
-      if (!body.active) return false; // Sphere dừng → xóa khỏi physicsBodies, giữ scene
+      return body.active;
 
       return true;
     });
