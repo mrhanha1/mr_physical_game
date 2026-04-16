@@ -1,21 +1,22 @@
-// modes/PCMode.js - PC keyboard/mouse/controller mode
+// modes/PCMode.js - PC input layer: mouse look, WASD movement, virtual hands, gun toggle
 import * as THREE from 'three';
-import { PhysicsBody, VelocityTracker } from '../core/PhysicsBody.js';
 
-const MOVE_SPEED   = 3.0;   // m/s
+const MOVE_SPEED    = 3.0;   // m/s
 const HAND_OFFSET_L = new THREE.Vector3(-0.18, -0.18, -0.5);
 const HAND_OFFSET_R = new THREE.Vector3( 0.18, -0.18, -0.5);
-const GRAB_RADIUS   = 0.25;
 
 export class PCMode {
-  constructor(sceneManager, sphereGenerator, levelManager, audioManager, gunMode) {
-    this.sceneManager    = sceneManager;
-    this.scene           = sceneManager.scene;
-    this.camera          = sceneManager.camera;
-    this.sphereGenerator = sphereGenerator;
-    this.levelManager    = levelManager;
-    this.audio           = audioManager;
-    this.gunMode         = gunMode;
+  /**
+   * @param {object} sceneManager
+   * @param {import('../core/GrabSystem.js').GrabSystem} grabSystem
+   * @param {import('../core/GunMode.js').GunMode} gunMode
+   */
+  constructor(sceneManager, grabSystem, gunMode) {
+    this.sceneManager = sceneManager;
+    this.scene        = sceneManager.scene;
+    this.camera       = sceneManager.camera;
+    this.grabSystem   = grabSystem;
+    this.gunMode      = gunMode;
 
     // Virtual hands (Object3D gắn vào camera)
     this.leftHand  = new THREE.Object3D();
@@ -28,23 +29,14 @@ export class PCMode {
     // Visual hand meshes
     this._buildHandVisuals();
 
-    // Grab state cho 2 tay
-    this.grabState = [
-      { isGrabbing: false, grabbed: null, tracker: new VelocityTracker() }, // left (0)
-      { isGrabbing: false, grabbed: null, tracker: new VelocityTracker() }, // right (1)
-    ];
-    this.physicsBodies = [];
-
     // Input state
     this._keys     = {};
-    this._yaw      = 0;   // camera horizontal rotation (radian)
-    this._pitch    = 0;   // camera vertical rotation (radian)
+    this._yaw      = 0;
+    this._pitch    = 0;
     this._isLocked = false;
 
     // Debounce Q
     this._qWasPressed = false;
-
-    this._worldPos = new THREE.Vector3();
 
     this._bindEvents();
     this._buildCrosshair();
@@ -53,7 +45,7 @@ export class PCMode {
   // ─── Visual ───────────────────────────────────────────────────────────────
 
   _buildHandVisuals() {
-    const geo = new THREE.SphereGeometry(0.04, 10, 10);
+    const geo  = new THREE.SphereGeometry(0.04, 10, 10);
 
     const matL = new THREE.MeshPhysicalMaterial({ color: 0x88aaff, roughness: 0.4, metalness: 0.2 });
     this._leftMesh = new THREE.Mesh(geo, matL);
@@ -65,7 +57,6 @@ export class PCMode {
   }
 
   _buildCrosshair() {
-    // Crosshair đơn giản bằng HTML overlay
     const el = document.createElement('div');
     el.id = 'pc-crosshair';
     el.style.cssText = `
@@ -110,13 +101,11 @@ export class PCMode {
     document.addEventListener('keydown', (e) => { this._keys[e.code] = true;  });
     document.addEventListener('keyup',   (e) => { this._keys[e.code] = false; });
 
-    // Mouse buttons
-    // Left click (0) = left hand grab / gun fire
-    // Right click (2) = right hand grab / gun loadAmmo trigger (load via right)
+    // Mouse buttons: left(0) = left hand / fire; right(2) = right hand
     document.addEventListener('mousedown', (e) => {
       if (!this._isLocked) return;
-      if (e.button === 0) this._onMouseDown(0);  // left click → left hand
-      if (e.button === 2) this._onMouseDown(1);  // right click → right hand
+      if (e.button === 0) this._onMouseDown(0);
+      if (e.button === 2) this._onMouseDown(1);
     });
     document.addEventListener('mouseup', (e) => {
       if (!this._isLocked) return;
@@ -133,100 +122,20 @@ export class PCMode {
   }
 
   _onMouseDown(handIndex) {
-    // Gun mode: left click = fire, right click = không dùng
+    // Gun mode: left click = fire
     if (this.gunMode?.isActive) {
-      if (handIndex === 0) this.gunMode.firePCMode(this.camera);
+      if (handIndex === 0) this.gunMode.fire(this.camera);
       return;
     }
 
-    const hand  = this._getHand(handIndex);
-    const state = this.grabState[handIndex];
-    if (state.isGrabbing) return;
-
-    const handWorld = new THREE.Vector3();
-    hand.getWorldPosition(handWorld);
-
-    const spheres = this.sphereGenerator.getActiveSpheres();
-    let closest = null, minDist = Infinity;
-
-    for (const s of spheres) {
-      if (s.userData.isLocked || s.userData.isGrabbed) continue;
-      const sp = new THREE.Vector3();
-      s.getWorldPosition(sp);
-      const d = handWorld.distanceTo(sp);
-      if (d < minDist) { minDist = d; closest = s; }
-    }
-
-    if (!closest || minDist > GRAB_RADIUS) return;
-
-    state.isGrabbing = true;
-    state.grabbed    = closest;
-    state.tracker.reset();
-    closest.userData.isGrabbed = true;
-    hand.attach(closest);
-    closest.scale.set(0.9, 0.9, 0.9);
+    const hand = this._getHand(handIndex);
+    this.grabSystem.grabSphere(handIndex, hand);
   }
 
   _onMouseUp(handIndex) {
-    const hand  = this._getHand(handIndex);
-    const state = this.grabState[handIndex];
-    if (!state.isGrabbing || !state.grabbed) return;
-
-    const sphere = state.grabbed;
-    sphere.userData.isGrabbed = false;
-    sphere.scale.set(1, 1, 1);
-    const vel = state.tracker.compute();
-    this.scene.attach(sphere);
-    state.isGrabbing = false;
-    state.grabbed    = null;
-
-    // Left hand thả gần right hand + gun active → load ammo
-    if (handIndex === 0 && this.gunMode?.isActive) {
-      const rightWorld = new THREE.Vector3();
-      this.rightHand.getWorldPosition(rightWorld);
-      sphere.getWorldPosition(this._worldPos);
-
-      if (this._worldPos.distanceTo(rightWorld) < 0.3) {
-        this.gunMode.loadAmmo(sphere.userData.color);
-        this.scene.remove(sphere);
-        this.sphereGenerator.activeSpheres =
-          this.sphereGenerator.activeSpheres.filter(s => s !== sphere);
-        return;
-      }
-    }
-
-    // Drop bình thường
-    sphere.getWorldPosition(this._worldPos);
-    const result = this.levelManager.checkDrop(sphere, this._worldPos);
-
-    if (result) {
-      if (result.colorMatch) {
-        this._onCorrectDrop(sphere, result.slot);
-      } else {
-        this._onWrongDrop(sphere);
-      }
-    } else if (vel.length() > 0.1) {
-      this.physicsBodies.push(new PhysicsBody(sphere, vel));
-    }
-  }
-
-  _onCorrectDrop(sphere, slot) {
-    const slotPos = new THREE.Vector3();
-    slot.mesh.getWorldPosition(slotPos);
-    const snd = this.audio.playCorrect(slotPos);
-    if (snd) this.scene.add(snd);
-    this.levelManager.fillSlot(slot, sphere);
-    this.sphereGenerator.activeSpheres =
-      this.sphereGenerator.activeSpheres.filter(s => s !== sphere);
-  }
-
-  _onWrongDrop(sphere) {
-    const snd = this.audio.playFail(sphere.position.clone());
-    if (snd) this.scene.add(snd);
-    // Bounce nhỏ
-    const dir = sphere.position.clone().normalize();
-    dir.y += 0.3;
-    this.physicsBodies.push(new PhysicsBody(sphere, dir.multiplyScalar(1.5)));
+    const hand      = this._getHand(handIndex);
+    const otherHand = this._getHand(handIndex === 0 ? 1 : 0);
+    this.grabSystem.releaseSphere(handIndex, hand, otherHand);
   }
 
   // ─── Update ───────────────────────────────────────────────────────────────
@@ -234,11 +143,11 @@ export class PCMode {
   update(delta) {
     if (!this._isLocked) return;
 
-    // ── Camera rotation ──
+    // Camera rotation
     const euler = new THREE.Euler(this._pitch, this._yaw, 0, 'YXZ');
     this.camera.quaternion.setFromEuler(euler);
 
-    // ── Movement ──
+    // Movement
     const move = new THREE.Vector3();
     if (this._keys['KeyW'] || this._keys['ArrowUp'])    move.z -= 1;
     if (this._keys['KeyS'] || this._keys['ArrowDown'])  move.z += 1;
@@ -249,50 +158,21 @@ export class PCMode {
 
     if (move.length() > 0) {
       move.normalize();
-      // Chỉ apply yaw cho horizontal, giữ pitch cho look
       const yawQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, this._yaw, 0));
       move.applyQuaternion(yawQ);
       this.camera.position.addScaledVector(move, MOVE_SPEED * delta);
     }
 
-    // ── Toggle GunMode bằng Q ──
+    // Toggle GunMode bằng Q
     const qPressed = this._keys['KeyQ'] ?? false;
-    if (qPressed && !this._qWasPressed) this.gunMode?.togglePCMode(this.camera, this.rightHand);
-    this._qWasPressed = qPressed;
-
-    // ── VelocityTracker cho sphere đang cầm ──
-    for (const state of this.grabState) {
-      if (state.isGrabbing && state.grabbed) {
-        const wp = new THREE.Vector3();
-        state.grabbed.getWorldPosition(wp);
-        state.tracker.record(wp);
-      }
+    if (qPressed && !this._qWasPressed) {
+      this.gunMode?.toggle({ attachTo: this.rightHand });
     }
-
-    // ── Physics cho sphere đã thả ──
-    this.physicsBodies = this.physicsBodies.filter((body) => {
-      body.update(delta);
-      if (body.active) {
-        body.mesh.getWorldPosition(this._worldPos);
-        const result = this.levelManager.checkDrop(body.mesh, this._worldPos);
-        if (result) {
-          if (result.colorMatch) this._onCorrectDrop(body.mesh, result.slot);
-          else                   this._onWrongDrop(body.mesh);
-          body.active = false;
-          return false;
-        }
-      }
-      if (body.mesh.position.y < -2) {
-        this.scene.remove(body.mesh);
-        this.sphereGenerator.activeSpheres =
-          this.sphereGenerator.activeSpheres.filter(s => s !== body.mesh);
-        return false;
-      }
-      return body.active;
-    });
+    this._qWasPressed = qPressed;
   }
 
-  /** Dọn dẹp khi thoát PC mode */
+  // ─── Dispose ──────────────────────────────────────────────────────────────
+
   dispose() {
     document.exitPointerLock();
     this._crosshair?.remove();

@@ -1,32 +1,41 @@
 // main.js - Application entry point
 import * as THREE from 'three';
-import { SceneManager } from './core/SceneManager.js';
+import { SceneManager }    from './core/SceneManager.js';
 import { SphereGenerator } from './core/SphereGenerator.js';
-import { LevelManager } from './core/LevelManager.js';
-import { Interaction } from './core/Interaction.js';
-import { AudioManager } from './core/AudioManager.js';
-import { GunMode } from './core/GunMode.js';
-import { VRMode } from './modes/VRMode.js';
-import { ARMode } from './modes/ARMode.js';
-import { PCMode } from './modes/PCMode.js';
+import { LevelManager }    from './core/LevelManager.js';
+import { GrabSystem }      from './core/GrabSystem.js';
+import { VRInput }         from './core/VRInput.js';
+import { AudioManager }    from './core/AudioManager.js';
+import { GunMode }         from './core/GunMode.js';
+import { VRMode }          from './modes/VRMode.js';
+import { ARMode }          from './modes/ARMode.js';
+import { PCMode }          from './modes/PCMode.js';
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
 const sceneManager = new SceneManager();
-const scene = sceneManager.scene;
+const scene  = sceneManager.scene;
 const camera = sceneManager.camera;
 
 // ─── Core Systems ─────────────────────────────────────────────────────────────
 
-const audioManager  = new AudioManager(camera);
-const sphereGen     = new SphereGenerator(scene);
-const levelManager  = new LevelManager(scene, audioManager);
-const interaction   = new Interaction(sceneManager, levelManager, audioManager, sphereGen);
-const gunMode       = new GunMode(sceneManager, sphereGen, levelManager);
+const audioManager = new AudioManager(camera);
+const sphereGen    = new SphereGenerator(scene);
+const levelManager = new LevelManager(scene, audioManager);
 
-interaction.setGunMode(gunMode);
+// Shared game-logic layer
+const grabSystem = new GrabSystem(sceneManager, levelManager, audioManager, sphereGen);
+const gunMode    = new GunMode(sceneManager, sphereGen, levelManager);
+grabSystem.setGunMode(gunMode);
+
+// VR input layer (XR controller events)
+const vrInput = new VRInput(sceneManager, grabSystem);
 
 // ─── Modes ───────────────────────────────────────────────────────────────────
+
+const vrMode = new VRMode(sceneManager);
+const arMode = new ARMode(sceneManager, levelManager, sphereGen);
+
 // PC Mode
 let pcMode = null;
 const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch(() => false);
@@ -34,12 +43,15 @@ const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch
 function activatePCMode() {
   if (pcMode) return;
   sceneManager.enablePCMode();
-  
-  camera.position.set(0, 1.2, 0);
 
-  pcMode = new PCMode(sceneManager, sphereGen, levelManager, audioManager, gunMode);
+  // Dùng cùng anchor logic như VR (build room trước để lấy wallAnchor)
+  vrMode.enter();
+  camera.position.set(0, 1.6, 1.5); // đứng phía trong room nhìn vào wall
 
-  const anchorPos = new THREE.Vector3(0, 1.2, -2);
+  pcMode = new PCMode(sceneManager, grabSystem, gunMode);
+
+  // Dùng vrMode.wallAnchor — thống nhất với VR mode (Bước 3)
+  const anchorPos = vrMode.wallAnchor.clone();
   levelManager.buildColorCircle(anchorPos);
   const colorIndices = levelManager.getActiveSlotColorIndices();
   sphereGen.spawnForLevel(anchorPos, colorIndices, { radius: 1.0, heightRange: [0.8, 1.6] });
@@ -63,14 +75,6 @@ if (!xrSupported) activatePCMode();
 document.getElementById('PCButton')?.addEventListener('click', activatePCMode);
 if (xrSupported) document.getElementById('PCButton').style.display = 'block';
 else document.getElementById('PCButton').style.display = 'none';
-
-//---- VR/AR Modes
-const vrMode = new VRMode(sceneManager);
-const arMode = new ARMode(sceneManager, levelManager, sphereGen);
-
-// ─── UI Overlay ──────────────────────────────────────────────────────────────
-
-const ui = buildUI();
 
 // ─── Session Lifecycle ───────────────────────────────────────────────────────
 
@@ -153,8 +157,8 @@ sceneManager.setAnimationLoop((timestamp, frame) => {
 
   if (activeMode === 'vr') {
     vrMode.update(delta);
-    interaction.updateLocomotion(delta, 2.5);
-    interaction.update(delta);
+    vrInput.updateLocomotion(delta, 2.5);
+    grabSystem.update(delta);
     gunMode.updateButtonInput();
     gunMode.update(delta);
   }
@@ -162,7 +166,7 @@ sceneManager.setAnimationLoop((timestamp, frame) => {
   if (activeMode === 'ar') {
     const refSpace = sceneManager.getReferenceSpace();
     arMode.update(frame, refSpace);
-    interaction.update(delta);
+    grabSystem.update(delta);
     gunMode.updateButtonInput();
     gunMode.update(delta);
   }
@@ -170,6 +174,7 @@ sceneManager.setAnimationLoop((timestamp, frame) => {
   // PC Mode update
   if (pcMode) {
     pcMode.update(delta);
+    grabSystem.update(delta);
     gunMode.update(delta);
   }
 
@@ -188,8 +193,8 @@ sceneManager.setAnimationLoop((timestamp, frame) => {
 // ─── UI Builder ──────────────────────────────────────────────────────────────
 
 function buildUI() {
-  const overlay = document.getElementById('ui-overlay');
-  const modeLabel = document.getElementById('mode-label');
+  const overlay    = document.getElementById('ui-overlay');
+  const modeLabel  = document.getElementById('mode-label');
   const levelLabel = document.getElementById('level-label');
   const levelBanner = document.getElementById('level-banner');
   const progressBar = document.getElementById('progress-bar-fill');
@@ -214,6 +219,10 @@ function buildUI() {
 }
 
 // ─── VR/AR Button Tag ─────────────────────────────────────────────────────────
+
+const ui = buildUI();
+ui.setMode('desktop');
+ui.updateLevel(1, levelManager.getLevelCount());
 
 (function patchButtons() {
   const vrBtn = sceneManager.setupVRButton();
@@ -241,8 +250,4 @@ function buildUI() {
       { once: true }
     );
   });
-
-  const uiRef = buildUI();
-  uiRef.setMode('desktop');
-  uiRef.updateLevel(1, levelManager.getLevelCount());
 })();
