@@ -40,6 +40,12 @@ export class ARMode {
     // Bind select (tap) for placing the circle
     const controller = this.sceneManager.getController(0);
     controller.addEventListener('select', this._onSelect);
+
+    this._refSpace = null;
+    const session = this.sceneManager.renderer.xr.getSession();
+    session.requestReferenceSpace('local-floor').then(rs => {
+      this._refSpace = rs;
+    });
   }
 
   exit() {
@@ -114,6 +120,10 @@ export class ARMode {
   update(frame, referenceSpace) {
     if (!this.isActive || !frame) return;
 
+    const refSpace = this._refSpace;
+    if (!refSpace) return; // chờ cho đến khi có
+    const pose = hit.getPose(refSpace);
+
     const session = frame.session;
 
     // Request hit-test source once
@@ -132,22 +142,20 @@ export class ARMode {
         });
     }
 
-    if (!this.hitTestSource || this.circleAnchored) {
+    if (!this.hitTestSource || this.circleAnchored || !this._refSpace) {
       return;
     }
 
-    // Get hit-test results
     const hitTestResults = frame.getHitTestResults(this.hitTestSource);
 
     if (hitTestResults.length > 0) {
       const hit = hitTestResults[0];
-      const pose = hit.getPose(referenceSpace);
+      const pose = hit.getPose(this._refSpace); // ← dùng _refSpace thay vì tham số referenceSpace
 
       this.reticle.visible = true;
       this.reticle.matrix.fromArray(pose.transform.matrix);
       this.reticle.matrixWorldNeedsUpdate = true;
 
-      // Pulse
       const t = performance.now() * 0.003;
       const s = 1 + 0.08 * Math.sin(t * 3);
       this.reticle.matrix.scale(new THREE.Vector3(s, s, s));
