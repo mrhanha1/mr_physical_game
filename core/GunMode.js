@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { PhysicsBody } from './PhysicsBody.js';
+import { BulletSystem } from './BulletSystem.js';
 
 const BULLET_SPEED    = 16.0;   // m/s
 const AMMO_PLANE_SIZE = 0.06;   // kích thước plane indicator đạn
@@ -22,7 +23,9 @@ export class GunMode {
     this._rightGrip       = sceneManager.getControllerGrip(1);
     this._rightController = sceneManager.getController(1);
 
-    this.physicsBodies    = []; // sphere đang bay
+    this._bulletSystem = new BulletSystem(
+      this.scene, sphereGenerator, levelManager, grabSystem
+    );
 
     // Debounce nút A (VR)
     this._btnAWasPressed = false;
@@ -145,8 +148,7 @@ export class GunMode {
       .applyQuaternion(originObject.getWorldQuaternion(new THREE.Quaternion()))
       .normalize();
 
-    this.physicsBodies.push(new PhysicsBody(sphere, dir.multiplyScalar(BULLET_SPEED), true));
-    this.sphereGenerator.activeSpheres.push(sphere);
+    this._bulletSystem.addBullet(sphere, dir.multiplyScalar(BULLET_SPEED));
 
     this.ammoColor = null;
     this._ammoIndicator.visible = false;
@@ -196,39 +198,7 @@ export class GunMode {
    * @param {number} delta
    */
   update(delta) {
-    const worldPos = new THREE.Vector3();
-
-    this.physicsBodies = this.physicsBodies.filter((body) => {
-      body.update(delta);
-
-      if (body.active) {
-        body.mesh.getWorldPosition(worldPos);
-        const result = this.levelManager.checkDrop(body.mesh, worldPos);
-        if (result) {
-          if (result.colorMatch) {
-            this.levelManager.fillSlot(result.slot, body.mesh);
-            this.scene.remove(body.mesh);
-            this.sphereGenerator.activeSpheres =
-              this.sphereGenerator.activeSpheres.filter(s => s !== body.mesh);
-            this._hapticPulse(1, 0.8, 200);
-          } else {
-            const bounceVel = body.velocity.clone()
-              .reflect(new THREE.Vector3(0, 1, 0))
-              .multiplyScalar(0.4);
-            this.grabSystem.handOffToPhysics(body.mesh, bounceVel);
-          }
-          return false;
-        }
-      }
-
-      if (body.mesh.position.y < -2) {
-        this.scene.remove(body.mesh);
-        this.sphereGenerator.activeSpheres =
-          this.sphereGenerator.activeSpheres.filter(s => s !== body.mesh);
-        return false;
-      }
-      return body.active;
-    });
+    this._bulletSystem.update(delta, () => this._hapticPulse(1, 0.8, 200));
   }
 
   // ─── Haptic ───────────────────────────────────────────────────────────────
