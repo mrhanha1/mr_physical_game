@@ -89,8 +89,12 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                         fail.mp3    → phát tại vị trí sphere.
 │                         ambient.mp3 → loop, volume thấp, gắn scene center.
 │
+├── BulletSystem.js     quản lý physicsBodies[]
+│                       simulate PhysicsBody bullet, checkDrop, cleanup sphere rơi y < -2
+│                       gọi grabSystem.handOffToPhysics khi sai màu
+│
 └── GunMode.js          Chế độ bắn sphere bằng súng. Nhận SceneManager,
-                        SphereGenerator, LevelManager, GrabSystem.
+                        SphereGenerator, LevelManager, GrabSystem, BulletSystem.
 
                         VR/AR toggle: nút A (right controller, index 4).
                         PC toggle: gọi toggle({ attachTo: rightHand }).
@@ -112,7 +116,7 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
                           PC: originObject = camera.
 
                         Update mỗi frame:
-                          Simulate PhysicsBody các sphere đang bay.
+                          Delegate toàn bộ bullet physics cho BulletSystem.update(delta, onCorrect)
                           Check drop vào slot qua LevelManager.checkDrop():
                             Đúng màu → fillSlot + scene.remove(sphere) +
                                         xóa activeSpheres + haptic 0.8/200ms.

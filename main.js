@@ -10,6 +10,7 @@ import { GunMode }         from './core/GunMode.js';
 import { VRMode }          from './modes/VRMode.js';
 import { ARMode }          from './modes/ARMode.js';
 import { PCMode }          from './modes/PCMode.js';
+import { Environment }     from './core/Environment.js';
 
 // ─── Bootstrap ───────────────────────────────────────────────────────────────
 
@@ -22,7 +23,8 @@ const camera = sceneManager.camera;
 const audioManager = new AudioManager(camera);
 const sphereGen    = new SphereGenerator(scene);
 const levelManager = new LevelManager(scene, audioManager);
-
+const environment = new Environment(scene);
+environment.build().catch(err => console.warn('Failed to build environment:', err));
 // Shared game-logic layer
 const grabSystem = new GrabSystem(sceneManager, levelManager, audioManager, sphereGen);
 const gunMode = new GunMode(sceneManager, sphereGen, levelManager, grabSystem);
