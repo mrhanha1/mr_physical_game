@@ -8,7 +8,8 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                       CSS: styled VR/AR/PC buttons, crosshair ẩn/hiện theo
 │                       pointer lock, instructions card đổi nội dung theo mode.
 │                       Nút #PCButton: fixed bottom center, click → activatePCMode().
-├── main.js             Khởi tạo SceneManager, chọn mode VR/AR/PC, vòng lặp animation.
+├── main.js             Khởi tạo SceneManager, Environment, chọn mode VR/AR/PC, vòng lặp animation.
+│                       Gọi environment.build() một lần sau init SceneManager.
 │                       Gọi GunMode.updateButtonInput() và GunMode.update(delta) mỗi frame
 │                       khi ở VR/AR. Gọi pcMode.update(delta) và gunMode.update(delta)
 │                       khi ở PC mode. grabSystem.update(delta) chạy ở mọi mode.
@@ -25,6 +26,12 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 ├── SceneManager.js     Tạo scene, camera, renderer WebXR. Quản lý switch session
 │                       immersive-vr / immersive-ar. referenceSpace: local-floor.
 │                       Thêm: isPCMode flag + enablePCMode() tắt renderer.xr.enabled.
+│
+├── core/Environment.js Load GLB props trang trí vào scene. Không biết về mode.
+│                       build(scene): load các GLB từ props[], add vào group, group add vào scene.
+│                       dispose(): remove group khỏi scene, giải phóng geometry/material.
+│                       Props khai báo trong mảng nội bộ: { url, position, scale, rotation }.
+│                       Không giao tiếp với file nào khác ngoài main.js.
 │
 ├── SphereGenerator.js  Array 12 màu HSL preset (bước 30°). Spawn sphere random
 │                       position mỗi level.
@@ -72,7 +79,6 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                         Track velocity sphere đang cầm.
 │                         Simulate physicsBodies: checkDrop mỗi frame,
 │                         xóa sphere rơi y < -2 khỏi scene + activeSpheres.
-│
 ├── PhysicsBody.js      Inertia system cho sphere sau khi thả hoặc bắn.
 │                       PhysicsBody: apply velocity + gravity (-4 m/s²) + damping
 │                       (0.92/frame) + floor clamp (y=0.05) + bounce nhỏ.

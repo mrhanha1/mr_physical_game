@@ -40,7 +40,6 @@ const arMode = new ARMode(sceneManager, levelManager, sphereGen);
 
 // PC Mode
 let pcMode = null;
-//const xrSupported = await navigator.xr?.isSessionSupported('immersive-vr').catch(() => false);
 
 function activatePCMode() {
   
@@ -72,13 +71,6 @@ function activatePCMode() {
     </p>`;
 }
 
-// Tự động bật nếu không có XR
-// if (!xrSupported) activatePCMode();
-
-// // Nút bấm thủ công
-// document.getElementById('PCButton')?.addEventListener('click', activatePCMode);
-// if (xrSupported) document.getElementById('PCButton').style.display = 'block';
-// else document.getElementById('PCButton').style.display = 'none';
 
 document.getElementById('PCButton')?.addEventListener('click', activatePCMode);
 

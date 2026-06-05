@@ -19,6 +19,11 @@ export class Environment {
     const props = [
       // Thêm props vào đây theo định dạng:
       // { url: '/assets/ten_file.glb', position: [x, y, z], scale: s, rotation: [rx, ry, rz] },
+      { url: '/assets/floor.glb', position: [0, 0.02, 0], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/treeDry.glb', position: [5, 0, 5], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/tree2.glb', position: [-5, 0, -5], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/grass.glb', position: [0, 0, 0], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/whiteFlower.glb', position: [0, 0, 0], scale: 1, rotation: [0, 0, 0] },
     ];
 
     const loads = props.map(({ url, position = [0,0,0], scale = 1, rotation = [0,0,0] }) =>

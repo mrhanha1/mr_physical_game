@@ -30,7 +30,7 @@ export class VRMode {
     const room = new THREE.Group();
     room.name = 'VirtualRoom';
 
-    const roomW = 8, roomH = 4, roomD = 8;
+    const roomW = 20, roomH = 12, roomD = 12;
 
     // Materials with different tones per face
     const faceMaterials = [
@@ -53,7 +53,8 @@ export class VRMode {
     // Floor grid
     const gridHelper = new THREE.GridHelper(8, 16, 0x334477, 0x222244);
     gridHelper.position.y = -roomH / 2 + 0.01;
-    room.add(gridHelper);
+    //ADD GRID, COMMEN OUT
+    //room.add(gridHelper);
 
     // Floor (solid, receiveShadow)
     const floorGeo = new THREE.PlaneGeometry(roomW, roomD);
@@ -77,10 +78,10 @@ export class VRMode {
     room.add(wall);
 
     // Lưu wall anchor để LevelManager dùng
-    this.wallAnchor = new THREE.Vector3(0, 2, -3.95); //(0, roomH / 2, -roomD / 2 + 0.05);
+    this.wallAnchor = new THREE.Vector3(0, 2, -2); //(0, roomH / 2, -roomD / 2 + 0.05);
 
     // Accent strip lights near ceiling
-    this._addAccentLights(room, roomW, roomH, roomD);
+    //this._addAccentLights(room, roomW, roomH, roomD);
 
     // Particle stars on walls
     this._addStarField(room, roomW, roomH, roomD);
