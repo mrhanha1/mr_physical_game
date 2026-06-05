@@ -3,18 +3,18 @@ import * as THREE from 'three';
 
 // 12 HSL preset colors, 30° steps
 export const COLOR_PRESETS = [
-  { hue: 0,   name: 'Red',          hex: '#FF0000' },  // 0  - Primary
-  { hue: 30,  name: 'Orange',        hex: '#FF8000' },  // 1  - Tertiary
-  { hue: 60,  name: 'Yellow',        hex: '#FFFF00' },  // 2  - Secondary
-  { hue: 90,  name: 'Chartreuse',    hex: '#80FF00' },  // 3  - Tertiary
-  { hue: 120, name: 'Green',         hex: '#00FF00' },  // 4  - Primary
-  { hue: 150, name: 'Spring Green',  hex: '#00FF80' },  // 5  - Tertiary
-  { hue: 180, name: 'Cyan',          hex: '#00FFFF' },  // 6  - Secondary
-  { hue: 210, name: 'Azure',         hex: '#0080FF' },  // 7  - Tertiary
-  { hue: 240, name: 'Blue',          hex: '#0000FF' },  // 8  - Primary
-  { hue: 270, name: 'Violet',        hex: '#8000FF' },  // 9  - Tertiary
-  { hue: 300, name: 'Magenta',       hex: '#FF00FF' },  // 10 - Secondary
-  { hue: 330, name: 'Rose',          hex: '#FF0080' },  // 11 - Tertiary
+  { name: 'Red',          hex: '#FF0000' },  // 0  - Primary RYB
+  { name: 'Red-Orange',   hex: '#FF4000' },  // 1  - Tertiary
+  { name: 'Orange',       hex: '#FF8000' },  // 2  - Secondary
+  { name: 'Yellow-Orange',hex: '#FFAA00' },  // 3  - Tertiary
+  { name: 'Yellow',       hex: '#FFFF00' },  // 4  - Primary RYB
+  { name: 'Yellow-Green', hex: '#80CC00' },  // 5  - Tertiary
+  { name: 'Green',        hex: '#00AA00' },  // 6  - Secondary
+  { name: 'Blue-Green',   hex: '#007755' },  // 7  - Tertiary
+  { name: 'Blue',         hex: '#0000FF' },  // 8  - Primary RYB
+  { name: 'Blue-Violet',  hex: '#4400CC' },  // 9  - Tertiary
+  { name: 'Violet',       hex: '#8800AA' },  // 10 - Secondary
+  { name: 'Red-Violet',   hex: '#CC0055' },  // 11 - Tertiary
 ];
 
 export class SphereGenerator {

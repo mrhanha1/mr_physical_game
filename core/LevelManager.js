@@ -2,30 +2,22 @@
 import * as THREE from 'three';
 import { COLOR_PRESETS } from './SphereGenerator.js';
 
-// Level definitions: each level specifies which secondary/tertiary colors are active
+// Level definitions: tier2Count + tier3Count, actual colors randomized each game
 const LEVELS = [
-  {
-    // Level 1 - Just secondaries (3 slots to fill)
-    name: 'Level 1 — Secondaries',
-    slotColorIndices: [2, 6, 10], // Yellow, Cyan, Magenta
-    description: 'Fill the secondary colors: Yellow, Cyan, Magenta',
-  },
-  {
-    // Level 2 - Two tertiaries added
-    name: 'Level 2 — Warm Tertiaries',
-    slotColorIndices: [2, 6, 10, 1, 3], // + Orange, Chartreuse
-    description: 'Warm tertiaries added: Orange, Chartreuse',
-  },
-  {
-    // Level 3 - All 9 non-primary slots
-    name: 'Level 3 — Full Wheel',
-    slotColorIndices: [1, 2, 3, 5, 6, 7, 9, 10, 11],
-    description: 'Complete the full color wheel!',
-  },
+  { name: 'Level 1', tier2Count: 2, tier3Count: 1 },
+  { name: 'Level 2', tier2Count: 3, tier3Count: 2 },
+  { name: 'Level 3', tier2Count: 3, tier3Count: 6 },
 ];
 
+function shufflePick(arr, count) {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
 // Primary slot positions (fixed, pre-colored) at 0°/120°/240°
-const PRIMARY_INDICES = [0, 4, 8]; // Red, Green, Blue
+const PRIMARY_INDICES = [0, 4, 8];   // Red, Yellow, Blue 
+const TIER2_POOL = [2, 6, 10];       // Orange, Green, Violet (thay Cyan/Magenta)
+const TIER3_POOL = [1, 3, 5, 7, 9, 11]; // 
 
 export class LevelManager {
   constructor(scene, audioManager) {
@@ -59,6 +51,11 @@ export class LevelManager {
     const level = this.getCurrentLevel();
     this.circleAnchor.copy(position);
 
+    // Randomize active slots from tier pools
+    const picked2 = shufflePick(TIER2_POOL, Math.min(level.tier2Count, TIER2_POOL.length));
+    const picked3 = shufflePick(TIER3_POOL, Math.min(level.tier3Count, TIER3_POOL.length));
+    const activeSlotIndices = new Set([...picked2, ...picked3]);
+
     const group = new THREE.Group();
     group.position.copy(position);
     group.rotation.x = Math.PI / 2;
@@ -77,7 +74,6 @@ export class LevelManager {
     group.add(ring);
 
     const totalSlots = 12;
-    const activeSlotIndices = new Set(level.slotColorIndices);
     const primarySet = new Set(PRIMARY_INDICES);
 
     for (let i = 0; i < totalSlots; i++) {
@@ -319,7 +315,7 @@ export class LevelManager {
   }
 
   getActiveSlotColorIndices() {
-    return this.getCurrentLevel().slotColorIndices;
+    return this.slots.map(s => s.expectedColorIndex);
   }
 
   update(delta) {
