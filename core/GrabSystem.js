@@ -1,6 +1,7 @@
 // core/GrabSystem.js - Shared grab/drop/physics logic cho cả VR và PC mode
 import * as THREE from 'three';
 import { PhysicsBody, VelocityTracker } from './PhysicsBody.js';
+import { ColorMixer } from './ColorMixer.js';
 
 const GRAB_RADIUS = 0.25;
 
@@ -28,6 +29,7 @@ export class GrabSystem {
     ];
 
     this.physicsBodies = [];
+    this._rightHeldSphere = null;
     this._worldPos = new THREE.Vector3();
   }
 
@@ -72,6 +74,7 @@ export class GrabSystem {
     state.tracker.reset();
     closest.userData.isGrabbed = true;
     handObject.attach(closest);
+    if (handIndex === 1) this._rightHeldSphere = closest;
     closest.scale.set(0.9, 0.9, 0.9);
     return true;
   }
@@ -100,20 +103,63 @@ export class GrabSystem {
     state.isGrabbing = false;
     state.grabbed    = null;
 
-    // Left hand thả gần right hand + gun active → load ammo
-    if (handIndex === 0 && this.gunMode?.isActive && otherHandObject) {
-      const rightWorld = new THREE.Vector3();
-      otherHandObject.getWorldPosition(rightWorld);
-      sphere.getWorldPosition(this._worldPos);
+    if (handIndex === 1) this._rightHeldSphere = null;
 
-      if (this._worldPos.distanceTo(rightWorld) < 0.3) {
+// Left hand thả gần right hand
+  if (handIndex === 0 && otherHandObject) {
+    const rightWorld = new THREE.Vector3();
+    otherHandObject.getWorldPosition(rightWorld);
+    sphere.getWorldPosition(this._worldPos);
+
+    if (this._worldPos.distanceTo(rightWorld) < 0.3) {
+      // Nhánh 1: gun active → load ammo (giữ nguyên)
+      if (this.gunMode?.isActive) {
         this.gunMode.loadAmmo(sphere.userData.color, sphere.userData.colorIndex);
         this.scene.remove(sphere);
         this.sphereGenerator.activeSpheres =
           this.sphereGenerator.activeSpheres.filter(s => s !== sphere);
         return;
       }
+
+      // Nhánh 2: right đang cầm sphere → mix màu
+      const rightSphere = this._rightHeldSphere;
+      if (rightSphere) {
+        const midpoint = new THREE.Vector3()
+          .addVectors(this._worldPos, rightWorld).multiplyScalar(0.5);
+
+        const resultIndex = ColorMixer.mix(
+          sphere.userData.colorIndex,
+          rightSphere.userData.colorIndex
+        );
+
+        // Xóa 2 sphere cũ
+        this.scene.remove(sphere);
+        this.sphereGenerator.activeSpheres =
+          this.sphereGenerator.activeSpheres.filter(s => s !== sphere);
+
+        // Buộc right hand drop sphere đang cầm
+        const rightState = this.grabState[1];
+        rightSphere.userData.isGrabbed = false;
+        rightSphere.scale.set(1, 1, 1);
+        this.scene.attach(rightSphere);
+        rightState.isGrabbing = false;
+        rightState.grabbed = null;
+        this._rightHeldSphere = null;
+        this.scene.remove(rightSphere);
+        this.sphereGenerator.activeSpheres =
+          this.sphereGenerator.activeSpheres.filter(s => s !== rightSphere);
+
+        // Tạo sphere kết quả
+        const newSphere = resultIndex >= 0
+          ? this.sphereGenerator._createSphere(resultIndex)
+          : this._createGreySphere();
+        newSphere.position.copy(midpoint);
+        this.scene.add(newSphere);
+        this.sphereGenerator.activeSpheres.push(newSphere);
+        return;
+      }
     }
+  }
 
     // Drop bình thường
     sphere.getWorldPosition(this._worldPos);
@@ -219,5 +265,23 @@ export class GrabSystem {
 
       return body.active;
     });
+  }
+  _createGreySphere() {
+    const geo = new THREE.SphereGeometry(0.06, 32, 32);
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: 0x808080,
+      emissive: new THREE.Color(0x808080),
+      emissiveIntensity: 0.1,
+      roughness: 0.3,
+      clearcoat: 1.0,
+    });
+    const sphere = new THREE.Mesh(geo, mat);
+    sphere.castShadow = true;
+    sphere.userData.color = '#808080';
+    sphere.userData.colorIndex = -1;
+    sphere.userData.isColorSphere = true;
+    sphere.userData.isGrabbed = false;
+    sphere.userData.isLocked = false;
+    return sphere;
   }
 }

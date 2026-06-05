@@ -49,31 +49,48 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                       fillSlot(): set slot.filled=true, sphere.visible=false,
 │                         thêm fillDisc vào colorCircle, kích hoạt animation + win check.
 │
+├── ColorMixer.js       Pure logic pha màu theo hệ RYB 12 bước, không có Three.js.
+│                       Cấp 1 (Primary RYB):  0=Red, 4=Yellow, 8=Blue
+│                       Cấp 2 (Secondary):    2=Orange, 6=Green, 10=Violet
+│                       Cấp 3 (Tertiary):     1=Red-Orange, 3=Yellow-Orange,
+│                                             5=Yellow-Green, 7=Blue-Green,
+│                                             9=Blue-Violet, 11=Red-Violet
+│                       static mix(indexA, indexB): trả về colorIndex kết quả,
+│                         hoặc -1 nếu không hợp lệ.
+|
 ├── GrabSystem.js       Shared grab/drop/physics logic cho cả VR và PC mode.
 │                       Thay thế Interaction.js cũ — dùng chung 1 class cho mọi mode.
+│                       Import ColorMixer để xử lý mix màu khi 2 tay cầm sphere.
+│                       _rightHeldSphere: track sphere right hand đang giữ.
 │
 │                       grabSphere(handIndex, handObject):
-│                         Tìm sphere gần nhất trong activeSpheres (GRAB_RADIUS=0.25m).
-│                         Skip nếu isLocked hoặc isGrabbed. Attach vào handObject.
+│                         Tìm sphere gần nhất (GRAB_RADIUS=0.25m), skip isLocked/isGrabbed.
 │                         Right hand không grab khi gunMode.isActive.
+│                         Set _rightHeldSphere khi handIndex=1.
 │
 │                       releaseSphere(handIndex, handObject, otherHandObject):
-│                         Tính velocity qua VelocityTracker.
-│                         Left thả gần right + gun active → loadAmmo(color, colorIndex).
-│                         Truyền cả hex và colorIndex vào GunMode.loadAmmo().
+│                         Clear _rightHeldSphere khi handIndex=1.
+│                         Left thả gần right (<0.3m):
+│                           gun active          → loadAmmo(color, colorIndex).
+│                           right cầm sphere    → ColorMixer.mix() → tạo sphere kết quả
+│                                                 tại midpoint, xóa 2 sphere cũ.
+│                                                 result=-1 → sphere xám (#808080).
 │                         Drop bình thường → checkDrop → _onCorrectDrop / _onWrongDrop.
 │
 │                       handOffToPhysics(sphere, velocity):
-│                         Public method. GunMode gọi khi sphere bắn sai màu để
-│                         chuyển giao sphere về GrabSystem physics pipeline.
-│                         Sphere tiếp tục được simulate, checkDrop, và grabbable lại.
+│                         GunMode gọi khi bắn sai — chuyển giao về physics pipeline,
+│                         sphere tiếp tục simulate, checkDrop, grabbable lại.
 │
-│                       _onCorrectDrop(sphere, slot):
-│                         playCorrect() + fillSlot() + xóa khỏi activeSpheres.
+│                       _onCorrectDrop / _onWrongDrop:
+│                         Correct: playCorrect + fillSlot + xóa khỏi activeSpheres.
+│                         Wrong:   playFail + _rejectSphere (anim đẩy ra, vẫn grabbable).
 │
-│                       _onWrongDrop(sphere):
-│                         playFail() + _rejectSphere() (animation đẩy ra).
-│                         Sphere vẫn trong activeSpheres, grabbable lại bình thường.
+│                       _createGreySphere(): colorIndex=-1, không match slot nào.
+│
+│                       update(delta):
+│                         Track velocity sphere đang cầm.
+│                         Simulate physicsBodies: checkDrop mỗi frame,
+│                         xóa sphere rơi y < -2 khỏi scene + activeSpheres.
 │
 │                       update(delta):
 │                         Track velocity sphere đang cầm.
