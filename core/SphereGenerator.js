@@ -1,7 +1,6 @@
 // SphereGenerator.js - Color sphere spawning system
 import * as THREE from 'three';
 
-// 12 HSL preset colors, 30° steps
 export const COLOR_PRESETS = [
   { name: 'Red',          hex: '#FF0000' },  // 0  - Primary RYB
   { name: 'Red-Orange',   hex: '#FF4000' },  // 1  - Tertiary
@@ -17,20 +16,29 @@ export const COLOR_PRESETS = [
   { name: 'Red-Violet',   hex: '#CC0055' },  // 11 - Tertiary
 ];
 
+// Tier classification
+const TIER2_SET = new Set([2, 6, 10]);
+const TIER3_SET = new Set([1, 3, 5, 7, 9, 11]);
+
+// Primary color indices và góc sector (radians) của vùng spawn tương ứng
+// Đổi 3 giá trị này để thay đổi vị trí 3 khu vực spawn
+const PRIMARY_SECTORS = [
+  { colorIndex: 0, angle: Math.PI },        // Red    → phía sau anchor
+  { colorIndex: 4, angle: Math.PI * 5 / 3 },// Yellow → phải-sau
+  { colorIndex: 8, angle: Math.PI * 4 / 3 },// Blue   → trái-sau
+];
+
+const SECTOR_SPREAD = Math.PI / 3; // ±60° mỗi sector
+
 export class SphereGenerator {
   constructor(scene) {
     this.scene = scene;
     this.activeSpheres = [];
-
-    // Shared geometry/materials for instancing
     this.geometry = new THREE.SphereGeometry(0.06, 32, 32);
   }
 
-  /**
-   * Create a sphere for a given color preset index.
-   * @param {number} colorIndex - index into COLOR_PRESETS
-   * @returns {THREE.Mesh}
-   */
+  // ─── Sphere creation ──────────────────────────────────────────────────────
+
   _createSphere(colorIndex) {
     const preset = COLOR_PRESETS[colorIndex];
     const color = new THREE.Color(preset.hex);
@@ -55,7 +63,6 @@ export class SphereGenerator {
     sphere.userData.isGrabbed = false;
     sphere.userData.isLocked = false;
 
-    // Outline glow via second mesh
     const glowGeo = new THREE.SphereGeometry(0.07, 32, 32);
     const glowMat = new THREE.MeshBasicMaterial({
       color,
@@ -63,63 +70,97 @@ export class SphereGenerator {
       opacity: 0.12,
       side: THREE.BackSide,
     });
-    const glow = new THREE.Mesh(glowGeo, glowMat);
-    sphere.add(glow);
+    sphere.add(new THREE.Mesh(glowGeo, glowMat));
 
     return sphere;
   }
 
+  // ─── Spawn logic ──────────────────────────────────────────────────────────
+
   /**
-   * Spawn a batch of spheres around an anchor position for a level.
-   * @param {THREE.Vector3} anchor - center position (e.g. ColorCircle position)
-   * @param {number[]} colorIndices - which colors to spawn
-   * @param {object} options
+   * Tính số sphere mỗi màu cơ bản cần spawn dựa vào slot indices đang active.
+   * tier2 slot → 1 sphere/primary, tier3 slot → 2 sphere/primary.
+   * @param {number[]} activeSlotIndices
+   * @returns {number}
    */
-  spawnForLevel(anchor, colorIndices, options = {}) {
+  _countPerPrimary(activeSlotIndices) {
+    let count = 0;
+    for (const idx of activeSlotIndices) {
+      if (TIER2_SET.has(idx)) count += 1;
+      else if (TIER3_SET.has(idx)) count += 2;
+    }
+    return count;
+  }
+
+  /**
+   * Tính vị trí ngẫu nhiên trong sector của một màu cơ bản.
+   * @param {THREE.Vector3} spawnCenter - tâm vùng spawn (có thể khác anchor ColorCircle)
+   * @param {number} sectorAngle - góc trung tâm sector (radians)
+   * @param {number} radius
+   * @param {number[]} heightRange
+   * @returns {THREE.Vector3}
+   */
+  _sectorPosition(spawnCenter, sectorAngle, radius, heightRange) {
+    const angle = sectorAngle + (Math.random() - 0.5) * 2 * SECTOR_SPREAD;
+    const r = radius * (0.5 + Math.random() * 0.8);
+    const h = heightRange[0] + Math.random() * (heightRange[1] - heightRange[0]);
+    return new THREE.Vector3(
+      spawnCenter.x + Math.cos(angle) * r,
+      h,
+      spawnCenter.z + Math.sin(angle) * r,
+    );
+  }
+
+  /**
+   * Spawn sphere cho một level.
+   * Mỗi tier2 slot → 1 sphere mỗi primary. Mỗi tier3 slot → 2 sphere mỗi primary.
+   * Sphere chia 3 khu vực theo màu cơ bản tương ứng.
+   *
+   * @param {THREE.Vector3} anchor       - vị trí ColorCircle (tham chiếu)
+   * @param {number[]} activeSlotIndices - từ levelManager.getActiveSlotColorIndices()
+   * @param {object}   options
+   * @param {number}            [options.radius=1.2]
+   * @param {number[]}          [options.heightRange=[0.8,1.8]]
+   * @param {THREE.Vector3}     [options.spawnCenter]  - override tâm spawn, mặc định = anchor
+   * @param {boolean}           [options.clearPrevious=true]
+   */
+  spawnForLevel(anchor, activeSlotIndices, options = {}) {
     const {
       radius = 1.2,
       heightRange = [0.8, 1.8],
+      spawnCenter = anchor,
       clearPrevious = true,
     } = options;
 
     if (clearPrevious) this.clearAll();
 
-    for (const idx of colorIndices) {
-      const sphere = this._createSphere(idx);
+    const countPerPrimary = this._countPerPrimary(activeSlotIndices);
+    if (countPerPrimary === 0) return this.activeSpheres;
 
-      // Random position in a hemisphere around anchor
-      const angle = Math.random() * Math.PI * 2;
-      const r = radius * (0.5 + Math.random() * 0.8);
-      const h = heightRange[0] + Math.random() * (heightRange[1] - heightRange[0]);
-
-      sphere.position.set(
-        anchor.x + Math.cos(angle) * r,
-        h,
-        anchor.z + Math.sin(angle) * r
-      );
-
-      this.scene.add(sphere);
-      this.activeSpheres.push(sphere);
+    for (const { colorIndex, angle } of PRIMARY_SECTORS) {
+      for (let i = 0; i < countPerPrimary; i++) {
+        const sphere = this._createSphere(colorIndex);
+        sphere.position.copy(this._sectorPosition(spawnCenter, angle, radius, heightRange));
+        this.scene.add(sphere);
+        this.activeSpheres.push(sphere);
+      }
     }
 
     return this.activeSpheres;
   }
 
-  /**
-   * Remove a sphere from scene and tracked list.
-   */
+  // ─── Management ───────────────────────────────────────────────────────────
+
+  /** Xóa sphere khỏi scene và activeSpheres, giải phóng material. */
   removeSphere(sphere) {
     const idx = this.activeSpheres.indexOf(sphere);
     if (idx !== -1) this.activeSpheres.splice(idx, 1);
     this.scene.remove(sphere);
-    sphere.geometry?.dispose();
     sphere.material?.dispose();
   }
 
   clearAll() {
-    for (const s of [...this.activeSpheres]) {
-      this.scene.remove(s);
-    }
+    for (const s of [...this.activeSpheres]) this.scene.remove(s);
     this.activeSpheres = [];
   }
 

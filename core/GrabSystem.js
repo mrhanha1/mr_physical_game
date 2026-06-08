@@ -115,9 +115,7 @@ export class GrabSystem {
       // Nhánh 1: gun active → load ammo (giữ nguyên)
       if (this.gunMode?.isActive) {
         this.gunMode.loadAmmo(sphere.userData.color, sphere.userData.colorIndex);
-        this.scene.remove(sphere);
-        this.sphereGenerator.activeSpheres =
-          this.sphereGenerator.activeSpheres.filter(s => s !== sphere);
+        this.sphereGenerator.removeSphere(sphere);
         return;
       }
 
@@ -133,9 +131,7 @@ export class GrabSystem {
         );
 
         // Xóa 2 sphere cũ
-        this.scene.remove(sphere);
-        this.sphereGenerator.activeSpheres =
-          this.sphereGenerator.activeSpheres.filter(s => s !== sphere);
+        this.sphereGenerator.removeSphere(sphere);
 
         // Buộc right hand drop sphere đang cầm
         const rightState = this.grabState[1];
@@ -145,9 +141,7 @@ export class GrabSystem {
         rightState.isGrabbing = false;
         rightState.grabbed = null;
         this._rightHeldSphere = null;
-        this.scene.remove(rightSphere);
-        this.sphereGenerator.activeSpheres =
-          this.sphereGenerator.activeSpheres.filter(s => s !== rightSphere);
+        this.sphereGenerator.removeSphere(rightSphere);
 
         // Tạo sphere kết quả
         const newSphere = resultIndex >= 0
@@ -257,9 +251,7 @@ export class GrabSystem {
 
       // Xóa nếu rơi quá sàn
       if (body.mesh.position.y < -2) {
-        this.scene.remove(body.mesh);
-        this.sphereGenerator.activeSpheres =
-          this.sphereGenerator.activeSpheres.filter(s => s !== body.mesh);
+        this.sphereGenerator.removeSphere(body.mesh);
         return false;
       }
 

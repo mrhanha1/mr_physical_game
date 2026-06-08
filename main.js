@@ -56,8 +56,8 @@ function activatePCMode() {
   // Dùng vrMode.wallAnchor — thống nhất với VR mode (Bước 3)
   const anchorPos = vrMode.wallAnchor.clone();
   levelManager.buildColorCircle(anchorPos);
-  const colorIndices = levelManager.getActiveSlotColorIndices();
-  sphereGen.spawnForLevel(anchorPos, colorIndices, { radius: 1.0, heightRange: [0.8, 1.6] });
+  const activeSlotIndices = levelManager.getActiveSlotColorIndices();
+  sphereGen.spawnForLevel(anchorPos, activeSlotIndices, { radius: 1.0, heightRange: [0.8, 1.6] });
 
   document.getElementById('PCButton')?.remove();
   document.getElementById('instructions').innerHTML = `
@@ -102,8 +102,8 @@ sceneManager.onXRSessionStart(() => {
 
     const anchor = vrMode.wallAnchor;
     levelManager.buildColorCircle(anchor);
-    const colorIndices = levelManager.getActiveSlotColorIndices();
-    sphereGen.spawnForLevel(anchor, colorIndices, {
+    const activeSlotIndices = levelManager.getActiveSlotColorIndices();
+    sphereGen.spawnForLevel(anchor, activeSlotIndices, {
       radius: 1.2,
       heightRange: [0.9, 1.8],
     });
@@ -133,9 +133,9 @@ levelManager.onLevelComplete = (completedIndex) => {
 
     const anchor = levelManager.getCircleAnchor();
     levelManager.buildColorCircle(anchor);
-    const colorIndices = levelManager.getActiveSlotColorIndices();
+    const activeSlotIndices = levelManager.getActiveSlotColorIndices();
 
-    sphereGen.spawnForLevel(anchor, colorIndices, {
+    sphereGen.spawnForLevel(anchor, activeSlotIndices, {
       radius: activeMode === 'ar' ? 0.8 : 1.2,
       heightRange: activeMode === 'ar' ? [0.5, 1.4] : [0.9, 1.8],
     });
