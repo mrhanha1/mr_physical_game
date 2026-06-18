@@ -12,8 +12,8 @@ export class VRMode {
   enter() {
     if (this.isActive) return;
     this.isActive = true;
-    this.scene.background = new THREE.Color(0x0a0a1a);
-    this.scene.fog = new THREE.FogExp2(0x0a0a1a, 0.04);
+    //this.scene.background = new THREE.Color(0x0a0a1a);
+    //this.scene.fog = new THREE.FogExp2(0x0a0a1a, 0.04);
     this._buildRoom();
   }
 

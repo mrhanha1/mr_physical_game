@@ -104,7 +104,7 @@ export class LevelManager {
         '/assets/paintingColorBoard.glb',
         (gltf) => {
           const board = gltf.scene;
-          board.position.set(-0, -0.02, 0);  // chỉnh sau khi xem thực tế
+          board.position.set(-0, -0.03, 0);  // chỉnh sau khi xem thực tế
           board.scale.setScalar(0.65);      // chỉnh sau khi xem thực tế
           group.add(board);
         },

@@ -15,6 +15,12 @@ export class Environment {
    */
   build() {
     this._scene.add(this.group);
+        // Skybox
+    const sky = new THREE.CubeTextureLoader()
+      .setPath('/assets/skybox/')
+      .load(['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']);
+    this._scene.background = sky;
+    this._skybox = sky;
 
     const props = [
       { url: '/assets/floor.glb', position: [0, 0.01, 0], scale: 1, rotation: [0, 0, 0] },
@@ -131,6 +137,8 @@ export class Environment {
   /** Xóa group khỏi scene và giải phóng geometry/material. */
   dispose() {
     this._scene.remove(this.group);
+    this._scene.background = null;
+    this._skybox?.dispose();
     this.group.traverse(obj => {
       obj.geometry?.dispose();
       if (obj.material) {
