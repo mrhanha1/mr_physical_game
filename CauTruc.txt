@@ -41,6 +41,14 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                       userData.color lưu hex RYB.
 │                       userData.colorIndex lưu index (0–11) tương ứng COLOR_PRESETS.
 │                       Cả hai field bắt buộc để checkDrop() hoạt động đúng.
+│                       spawnForLevel(anchor, activeSlotIndices, options):
+│                         Nhận activeSlotIndices từ levelManager.getActiveSlotColorIndices().
+│                         Tự tính số sphere mỗi primary: tier2 slot → 1, tier3 slot → 2.
+│                         Spawn 3 primary (Red/Yellow/Blue) mỗi loại countPerPrimary sphere.
+│                         Chia 3 khu vực theo PRIMARY_SECTORS (góc configurable).
+│                         options.spawnCenter: override tâm spawn độc lập với anchor.
+│                       removeSphere(sphere): xóa khỏi scene + activeSpheres + dispose material.
+│                         GrabSystem gọi thay vì scene.remove() trực tiếp để giữ activeSpheres sync.
 │
 ├── LevelManager.js     Mỗi level = 1 ColorCircle (Group, 12 slot trên vòng tròn).
 │                       3 slot primary (0/4/8 = Red/Yellow/Blue RYB) tô màu sẵn,

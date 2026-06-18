@@ -31,6 +31,7 @@ const MIX_TABLE = [
 
 export class ColorMixer {
   static mix(indexA, indexB) {
+    if (indexA === indexB) return indexA;
     for (const [a, b, result] of MIX_TABLE) {
       if ((indexA === a && indexB === b) || (indexA === b && indexB === a)) {
         return result;
