@@ -1,6 +1,7 @@
 // LevelManager.js - Color Circle slot system
 import * as THREE from 'three';
 import { COLOR_PRESETS } from './SphereGenerator.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // Level definitions: tier2Count + tier3Count, actual colors randomized each game
 const LEVELS = [
@@ -71,7 +72,7 @@ export class LevelManager {
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = -Math.PI / 2;
-    group.add(ring);
+    //group.add(ring);
 
     const totalSlots = 12;
     const primarySet = new Set(PRIMARY_INDICES);
@@ -98,6 +99,18 @@ export class LevelManager {
       } else {
         this._addInactiveSlot(group, x, z);
       }
+      const loader = new GLTFLoader();
+      loader.load(
+        '/assets/paintingColorBoard.glb',
+        (gltf) => {
+          const board = gltf.scene;
+          board.position.set(-0, -0.02, 0);  // chỉnh sau khi xem thực tế
+          board.scale.setScalar(0.65);      // chỉnh sau khi xem thực tế
+          group.add(board);
+        },
+        undefined,
+        (err) => console.error('[LevelManager] Không load được paintingColorBoard.glb:', err)
+);
     }
 
     this._addCenterLabel(group, level.name);

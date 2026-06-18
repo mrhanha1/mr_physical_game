@@ -17,13 +17,103 @@ export class Environment {
     this._scene.add(this.group);
 
     const props = [
-      // Thêm props vào đây theo định dạng:
-      // { url: '/assets/ten_file.glb', position: [x, y, z], scale: s, rotation: [rx, ry, rz] },
-      { url: '/assets/floor.glb', position: [0, 0.02, 0], scale: 1, rotation: [0, 0, 0] },
-      { url: '/assets/treeDry.glb', position: [5, 0, 5], scale: 1, rotation: [0, 0, 0] },
-      { url: '/assets/tree2.glb', position: [-5, 0, -5], scale: 1, rotation: [0, 0, 0] },
-      { url: '/assets/grass.glb', position: [0, 0, 0], scale: 1, rotation: [0, 0, 0] },
-      { url: '/assets/whiteFlower.glb', position: [0, 0, 0], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/floor.glb', position: [0, 0.01, 0], scale: 1, rotation: [0, 0, 0] },
+
+      // --- Khu vực đông bắc: treeDry + tree1 ---
+      { url: '/assets/treeDry.glb', position: [5, 0, -5], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/tree1.glb', position: [8.5, 0, -7.5], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [5.5, 0, -3.8], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [7.2, 0, -6.2], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/flowerRed.glb', position: [4.8, 0, -3.2], scale: 0.9, rotation: [0, 0, 0] },
+      { url: '/assets/flowerWhite.glb', position: [6.2, 0, -3.5], scale: 1.2, rotation: [0, 0, 0] },
+
+      // --- Khu vực đông nam: treeDry + treePine ---
+      { url: '/assets/treeDry.glb', position: [6, 0, -7], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/treePine.glb', position: [8.5, 0, -4], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [7, 0, -5.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [6.5, 0, -8.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/flowerYellow.glb', position: [5.8, 0, -5], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/flowerPurple.glb', position: [7.5, 0, -4.5], scale: 1.4, rotation: [0, 0, 0] },
+
+      // --- Khu vực tây: tree2 + tree1 ---
+      { url: '/assets/tree2.glb', position: [-7, 0, -6], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/tree1.glb', position: [-8, 0, 0], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [-6, 0, -4.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [-7.5, 0, 1.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/redFlower.glb', position: [-5.5, 0, -3.8], scale: 1.3, rotation: [0, 0, 0] },
+      { url: '/assets/flowerWhite.glb', position: [-6.8, 0, 2.2], scale: 0.8, rotation: [0, 0, 0] },
+
+      // --- Khu vực tây bắc: tree2 + tree3 ---
+      { url: '/assets/tree2.glb', position: [-5, 0, 3], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/tree3.glb', position: [-3, 0, 3.5], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [-6, 0, 4.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [-4, 0, 5.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/flowerPurple.glb', position: [-6.5, 0, 5.2], scale: 1.1, rotation: [0, 0, 0] },
+      { url: '/assets/flowerYellow.glb', position: [-5, 0, 6.2], scale: 1.6, rotation: [0, 0, 0] },
+
+      // --- Khu vực bắc: treePine + bush ---
+      { url: '/assets/treePine.glb', position: [4, 0, 6], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/bush.glb', position: [2.5, 0, 7.5], scale: 0.5, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [3, 0, 8], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [5.5, 0, 7], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/redFlower.glb', position: [2.5, 0, 8.8], scale: 1.5, rotation: [0, 0, 0] },
+      { url: '/assets/flowerRed.glb', position: [4.5, 0, 8.5], scale: 0.9, rotation: [0, 0, 0] },
+
+      // --- Khu vực trung tâm (quanh Color Wheel) ---
+      { url: '/assets/grasss.glb', position: [-2, 0, 1.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/grasss.glb', position: [2, 0, -1.5], scale: 2, rotation: [0, 0, 0] },
+      { url: '/assets/flowerYellow.glb', position: [-2.8, 0, 0.8], scale: 1.2, rotation: [0, 0, 0] },
+      { url: '/assets/flowerPurple.glb', position: [-1.5, 0, 2.5], scale: 0.8, rotation: [0, 0, 0] },
+      { url: '/assets/flowerWhite.glb', position: [1.5, 0, -2.5], scale: 1.4, rotation: [0, 0, 0] },
+      { url: '/assets/flowerRed.glb', position: [2.8, 0, -0.8], scale: 1.0, rotation: [0, 0, 0] },
+
+          // --- Khu vực tường bắc (z = -10) ---
+      { url: '/assets/bamboowall.glb', position: [0, 0, -10], scale: 1, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-8, 0, -9], scale: 1.2, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-4, 0, -9], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [0, 0, -9], scale: 1.3, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [4, 0, -9], scale: 1.1, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [8, 0, -9], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-6, 0, -7.5], scale: 1.4, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-2, 0, -7.5], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [2, 0, -7.5], scale: 1.2, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [6, 0, -7.5], scale: 0.9, rotation: [0, 0, 0] },
+
+      // --- Khu vực tường nam (z = 10) ---
+      { url: '/assets/bamboowall.glb', position: [0, 0, 10], scale: 1, rotation: [0, Math.PI, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-7, 0, 9], scale: 1.1, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-3, 0, 9], scale: 1.3, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [1, 0, 9], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [5, 0, 9], scale: 1.2, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [8.5, 0, 9], scale: 1.1, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-5, 0, 7.5], scale: 1.3, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-1, 0, 7.5], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [3, 0, 7.5], scale: 1.5, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [7, 0, 7.5], scale: 0.9, rotation: [0, 0, 0] },
+
+      // --- Khu vực tường đông (x = 10) ---
+      { url: '/assets/bamboowall.glb', position: [10, 0, 0], scale: 1, rotation: [0, -Math.PI / 2, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [9, 0, -8], scale: 1.2, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [9, 0, -4], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [9, 0, 0], scale: 1.3, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [9, 0, 4], scale: 1.1, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [9, 0, 8], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [7.5, 0, -6], scale: 1.2, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [7.5, 0, -2], scale: 1.4, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [7.5, 0, 2], scale: 0.9, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [7.5, 0, 6], scale: 1.1, rotation: [0, 0, 0] },
+
+      // --- Khu vực tường tây (x = -10) ---
+      { url: '/assets/bamboowall.glb', position: [-10, 0, 0], scale: 1, rotation: [0, Math.PI / 2, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-9, 0, -8], scale: 1.1, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-9, 0, -3], scale: 1.3, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-9, 0, 1], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-9, 0, 5], scale: 1.2, rotation: [0, 0, 0] },
+      { url: '/assets/bigBambooTree.glb', position: [-9, 0, 8.5], scale: 1.1, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-7.5, 0, -6], scale: 1.0, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-7.5, 0, -1], scale: 1.3, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-7.5, 0, 3], scale: 1.5, rotation: [0, 0, 0] },
+      { url: '/assets/smallBambooTree.glb', position: [-7.5, 0, 7], scale: 0.8, rotation: [0, 0, 0] },
     ];
 
     const loads = props.map(({ url, position = [0,0,0], scale = 1, rotation = [0,0,0] }) =>

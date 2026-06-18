@@ -75,7 +75,7 @@ export class VRMode {
     const wall = new THREE.Mesh(wallGeo, wallMat);
     wall.position.set(0, 0, -roomD / 2 + 0.01); // sát tường back
     wall.receiveShadow = true;
-    room.add(wall);
+    //room.add(wall);
 
     // Lưu wall anchor để LevelManager dùng
     this.wallAnchor = new THREE.Vector3(0, 2, -2); //(0, roomH / 2, -roomD / 2 + 0.05);
@@ -88,7 +88,7 @@ export class VRMode {
 
     room.position.set(0, roomH / 2, 0);
     this.room = room;
-    this.scene.add(room);
+    //this.scene.add(room);
   }
 
   _wallMat(hexColor, face) {
