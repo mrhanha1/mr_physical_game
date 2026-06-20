@@ -1,5 +1,6 @@
 // VRMode.js - Virtual Room + Locomotion
 import * as THREE from 'three';
+import { UIHelper } from '../core/UIHelper.js';
 
 export class VRMode {
   constructor(sceneManager) {
@@ -7,6 +8,7 @@ export class VRMode {
     this.scene = sceneManager.scene;
     this.room = null;
     this.isActive = false;
+    this.uiHelper = new UIHelper();
   }
 
   enter() {
@@ -24,6 +26,7 @@ export class VRMode {
       this.scene.remove(this.room);
       this.room = null;
     }
+    this.uiHelper.dispose(this.sceneManager.camera);
   }
 
   _buildRoom() {
@@ -79,6 +82,21 @@ export class VRMode {
 
     // Lưu wall anchor để LevelManager dùng
     this.wallAnchor = new THREE.Vector3(0, 2, -2); //(0, roomH / 2, -roomD / 2 + 0.05);
+
+    // UI hướng dẫn: gắn liền camera (HUD), style giống #instructions card
+    this.uiHelper.createPanel(
+      {
+        title: 'How to Play',
+        lines: [
+          'Pha màu: **Tay trái** + **Tay phải** cầm sphere, đưa gần nhau',
+          'Gun mode: nhấn nút **A** (right controller)',
+          'Nạp đạn: thả sphere trái vào tay phải khi gun bật',
+        ],
+      },
+      new THREE.Vector3(0.7, -0.15, -0.8),
+      this.sceneManager.camera,
+      { width: 0.9, height: 0.45 }
+    );
 
     // Accent strip lights near ceiling
     //this._addAccentLights(room, roomW, roomH, roomD);

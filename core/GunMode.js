@@ -93,9 +93,10 @@ export class GunMode {
       const parent = options.attachTo ?? this._rightGrip;
       parent.add(this._gunModel);
       this._gunModel.visible = true;
+      if (this.ammoColor) this._ammoIndicator.visible = true;
     } else {
       this._gunModel.visible = false;
-      this.ammoColor = null;
+      //this.ammoColor = null;
       this._ammoIndicator.visible = false;
     }
   }

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 export const COLOR_PRESETS = [
   { name: 'Red',          hex: '#FF0000' },  // 0  - Primary RYB
-  { name: 'Red-Orange',   hex: '#FF4000' },  // 1  - Tertiary
+  { name: 'Red-Orange',   hex: '#FF6600' },  // 1  - Tertiary
   { name: 'Orange',       hex: '#FF8000' },  // 2  - Secondary
   { name: 'Yellow-Orange',hex: '#FFAA00' },  // 3  - Tertiary
   { name: 'Yellow',       hex: '#FFFF00' },  // 4  - Primary RYB

@@ -27,7 +27,16 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
 │                       immersive-vr / immersive-ar. referenceSpace: local-floor.
 │                       Thêm: isPCMode flag + enablePCMode() tắt renderer.xr.enabled.
 │
-├── core/Environment.js Load GLB props trang trí vào scene. Không biết về mode.
+├── UIHelper.js          In-scene instruction panel (canvas texture), dùng chung VR/AR/PC.
+│                       createPanel({title, lines}, position, parentObject3D, options):
+│                         Vẽ canvas → CanvasTexture → PlaneGeometry mesh, add vào parentObject3D.
+│                         lines hỗ trợ cú pháp **text** → highlight kiểu badge (.key style).
+│                         Style đồng bộ #instructions card (index.html): nền tối, border tím,
+│                         title #a78bfa, body #94a3b8.
+│                       updateText(content): redraw canvas + texture.needsUpdate.
+│                       setVisible(bool) / dispose(parentObject3D).
+│
+├── Environment.js Load GLB props trang trí vào scene. Không biết về mode.
 │                       build(scene): load các GLB từ props[], add vào group, group add vào scene.
 │                       dispose(): remove group khỏi scene, giải phóng geometry/material.
 │                       Props khai báo trong mảng nội bộ: { url, position, scale, rotation }.
@@ -174,12 +183,16 @@ Three.js r170 + WebXR + Meta Quest 3 + PC Browser
                           gắn right controller tại (0.08, 0, -0.05), xoay π/4.
 
 📁 modes/
-├── VRMode.js           Virtual room: BoxGeometry 6 mặt, MeshPhongMaterial.
-│                       Accent strip lights + star field particles.
-│                       wallAnchor: Vector3(0, 2, -3.95) để đặt ColorCircle.
+├── VRMode.js            Virtual room: BoxGeometry 6 mặt, MeshPhongMaterial.
+│                       Particle stars on walls.
+│                       wallAnchor: Vector3(0, 2, -2) để đặt ColorCircle.
+│                       uiHelper (UIHelper.js): panel hướng dẫn pha màu/gun mode,
+│                         gắn vào sceneManager.camera (HUD, theo tầm nhìn),
+│                         offset Vector3(0, -0.35, -1.0) — sửa tại đây để đổi vị trí UI.
+│                         Tạo trong enter(), dispose trong exit().
 │                       Left joystick: locomotion qua VRInput / GrabSystem.updateLocomotion.
 │                       Dùng XRControllerModelFactory render model tay cầm.
-│                       enter()/exit() public — PC mode gọi enter() để dùng room.
+│                       enter()/exit() public — PC mode gọi enter() để dùng room (kế thừa UI).
 │
 ├── ARMode.js           Session: immersive-ar + hit-test + local-floor.
 │                       XRHitTestSource từ viewer space → detect mặt phẳng sàn.
