@@ -137,7 +137,14 @@ sceneManager.onXRSessionEnd(() => {
 levelManager.onLevelComplete = (completedIndex) => {
   ui.showLevelComplete(completedIndex + 1);
 
+  const isLastLevel = completedIndex >= levelManager.getLevelCount() - 1;
+
   setTimeout(() => {
+    if (isLastLevel) {
+          ui.hideLevelComplete();
+          return; // giữ nguyên color wheel đã hoàn thành
+        }
+
     levelManager.nextLevel();
     sphereGen.clearAll();
 
