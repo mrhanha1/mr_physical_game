@@ -75,6 +75,19 @@ export class SceneManager {
     const pointLight = new THREE.PointLight(0x6644ff, 1.5, 10);
     pointLight.position.set(-3, 3, -3);
     this.scene.add(pointLight);
+
+    // Spot lights chiếu xuống khu vực cây
+    const treeSpot1 = new THREE.SpotLight(0xffffff, 2.0, 15, Math.PI / 6, 0.4, 1);
+    treeSpot1.position.set(0, 5, 0); // chỉnh theo vị trí tree zone 1
+    treeSpot1.target.position.set(-3, 0, 3);
+    treeSpot1.castShadow = true;
+    this.scene.add(treeSpot1, treeSpot1.target);
+
+    const treeSpot2 = new THREE.SpotLight(0xffffff, 2.0, 15, Math.PI / 6, 0.4, 1);
+    treeSpot2.position.set(0, 8, 0); // chỉnh theo vị trí tree zone 2
+    treeSpot2.target.position.set(-3, 0, -3);
+    treeSpot2.castShadow = true;
+    this.scene.add(treeSpot2, treeSpot2.target);
   }
 
   _setupControllers() {
