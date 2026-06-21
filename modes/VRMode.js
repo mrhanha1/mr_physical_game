@@ -86,11 +86,14 @@ export class VRMode {
     // UI hướng dẫn: gắn liền camera (HUD), style giống #instructions card
     this.uiHelper.createPanel(
       {
-        title: 'How to Play',
+        title: 'Hướng dẫn chơi',
         lines: [
-          'Pha màu: **Tay trái** + **Tay phải** cầm sphere, đưa gần nhau',
-          'Gun mode: nhấn nút **A** (right controller)',
-          'Nạp đạn: thả sphere trái vào tay phải khi gun bật',
+          'Pha màu: 2 tay cầm 2 viên màu, từ **Tay trái** thả lên **Tay phải** để pha màu',
+          'Chế độ súng sơn: nhấn nút **A** (right controller)',
+          'Nạp đạn: Cầm viên màu từ **Tay trái** thả lên tay phải ở chế độ súng sơn',
+          'Bắn: nhấn nút **Trigger** (right controller)',
+          'Di chuyển: Giữ nút **trackpad** (left controller) và hướng theo tay',
+          'Restart level: Giữ nút **B** (right controller)',
         ],
       },
       new THREE.Vector3(0.7, -0.15, -0.8),

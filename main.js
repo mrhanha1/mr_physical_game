@@ -32,6 +32,16 @@ grabSystem.setGunMode(gunMode);
 
 // VR input layer (XR controller events)
 const vrInput = new VRInput(sceneManager, grabSystem);
+vrInput.onRestartHold = () => {
+  sphereGen.clearAll();
+  const anchor = levelManager.getCircleAnchor();
+  levelManager.resetLevel();
+  const activeSlotIndices = levelManager.getActiveSlotColorIndices();
+  sphereGen.spawnForLevel(anchor, activeSlotIndices, {
+    radius: activeMode === 'ar' ? 0.8 : 1.2,
+    heightRange: activeMode === 'ar' ? [0.5, 1.4] : [0.9, 1.8],
+  });
+};
 
 // ─── Modes ───────────────────────────────────────────────────────────────────
 
@@ -164,6 +174,7 @@ sceneManager.setAnimationLoop((timestamp, frame) => {
   if (activeMode === 'vr') {
     vrMode.update(delta);
     vrInput.updateLocomotion(delta, 2.5);
+    vrInput.update(delta);
     grabSystem.update(delta);
     gunMode.updateButtonInput();
     gunMode.update(delta);

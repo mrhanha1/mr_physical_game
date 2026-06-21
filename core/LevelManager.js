@@ -310,6 +310,11 @@ export class LevelManager {
   nextLevel() {
     this.currentLevelIndex = Math.min(this.currentLevelIndex + 1, LEVELS.length - 1);
   }
+  resetLevel() {
+    const anchor = this.circleAnchor.clone();
+    this.currentLevelIndex = this.currentLevelIndex; // giữ nguyên level hiện tại
+    this.buildColorCircle(anchor);
+  }
 
   reset() {
     this.currentLevelIndex = 0;

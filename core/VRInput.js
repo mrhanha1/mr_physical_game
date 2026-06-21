@@ -11,6 +11,8 @@ export class VRInput {
     this.grabSystem   = grabSystem;
 
     this._bindEvents();
+    this._bHoldTime = 0;
+    this.onRestartHold = null; // callback gán từ main.js
   }
 
   // ─── Events ───────────────────────────────────────────────────────────────
@@ -92,6 +94,27 @@ export class VRInput {
       }
       if (source?.gamepad?.hapticActuators?.[0]) {
         source.gamepad.hapticActuators[0].pulse(intensity, durationMs);
+      }
+    } catch (e) {}
+  }
+  
+  update(delta, holdThreshold = 1.0) {
+    try {
+      const session = this.sceneManager.renderer.xr.getSession();
+      if (!session) return;
+      let rightSource = null;
+      for (const s of session.inputSources) {
+        if (s.handedness === 'right') { rightSource = s; break; }
+      }
+      const bPressed = rightSource?.gamepad?.buttons?.[5]?.pressed;
+      if (bPressed) {
+        this._bHoldTime += delta;
+        if (this._bHoldTime >= holdThreshold) {
+          this._bHoldTime = -999; // tránh trigger lặp lại
+          if (this.onRestartHold) this.onRestartHold();
+        }
+      } else {
+        this._bHoldTime = 0;
       }
     } catch (e) {}
   }
